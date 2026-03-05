@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KDP Book Factory</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="app">
+        <header>
+            <div class="header-top">
+                <div>
+                    <h1>KDP Book Factory</h1>
+                    <p class="subtitle">Genera libros listos para Amazon KDP en segundos</p>
+                </div>
+                <div class="header-actions">
+                    <select id="lang-selector" onchange="switchLanguage(this.value)">
+                        <option value="es">Espanol</option>
+                        <option value="en">English</option>
+                    </select>
+                    <button class="btn-small" onclick="resetAllConfigs()">Reset Config</button>
+                </div>
+            </div>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab active" data-tab="wordsearch">Sopas de Letras</button>
+            <button class="tab" data-tab="sudoku">Sudoku</button>
+            <button class="tab" data-tab="journal">Journals</button>
+            <button class="tab" data-tab="coloring">Colorear</button>
+            <button class="tab" data-tab="mathpuzzle">Math</button>
+            <button class="tab" data-tab="extrapuzzles">Mas Puzzles</button>
+            <button class="tab" data-tab="covers">Portadas</button>
+            <button class="tab" data-tab="metadata">Metadatos</button>
+            <button class="tab" data-tab="royalties">Royalties</button>
+        </nav>
+
+        <!-- WORD SEARCH -->
+        <section id="wordsearch" class="tab-content active">
+            <h2>Generador de Sopas de Letras</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Titulo del Libro</label>
+                    <input type="text" id="ws-title" value="Word Search Puzzle Book" placeholder="Titulo del libro">
+                </div>
+                <div class="form-group">
+                    <label>Tema / Nicho</label>
+                    <input type="text" id="ws-theme" value="Animals" placeholder="Ej: Animals, Food, Travel...">
+                </div>
+                <div class="form-group">
+                    <label>Tamano de cuadricula</label>
+                    <select id="ws-gridsize">
+                        <option value="12">12x12 (Facil)</option>
+                        <option value="15" selected>15x15 (Medio)</option>
+                        <option value="18">18x18 (Dificil)</option>
+                        <option value="20">20x20 (Experto)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Numero de puzzles</label>
+                    <input type="number" id="ws-count" value="50" min="10" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Tamano de pagina</label>
+                    <select id="ws-pagesize" class="kdp-size-select">
+                        <option value="5x8">5 x 8</option>
+                        <option value="5.25x8">5.25 x 8</option>
+                        <option value="5.5x8.5">5.5 x 8.5</option>
+                        <option value="6x9" selected>6 x 9</option>
+                        <option value="6.14x9.21">6.14 x 9.21</option>
+                        <option value="6.69x9.61">6.69 x 9.61</option>
+                        <option value="7x10">7 x 10</option>
+                        <option value="7.44x9.69">7.44 x 9.69</option>
+                        <option value="7.5x9.25">7.5 x 9.25</option>
+                        <option value="8x10">8 x 10</option>
+                        <option value="8.25x6">8.25 x 6</option>
+                        <option value="letter">8.5 x 11</option>
+                        <option value="8.25x8.25">8.25 x 8.25</option>
+                        <option value="8.5x8.5">8.5 x 8.5</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Incluir soluciones</label>
+                    <select id="ws-solutions">
+                        <option value="yes">Si, al final</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+                <div class="form-group full-width">
+                    <label>Palabras (una por linea, minimo 8 por puzzle). Deja vacio para auto-generar segun tema.</label>
+                    <textarea id="ws-words" rows="6" placeholder="ELEPHANT&#10;GIRAFFE&#10;DOLPHIN&#10;PENGUIN&#10;TIGER&#10;EAGLE&#10;WHALE&#10;BEAR&#10;LION&#10;WOLF"></textarea>
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="btn-generate" onclick="generateWordSearch()">Generar Libro de Sopas de Letras (PDF)</button>
+                <button class="btn-batch" onclick="batchGenerate('wordsearch')">Generar 5 Libros</button>
+            </div>
+            <div id="ws-progress" class="progress-bar" style="display:none">
+                <div class="progress-fill"></div>
+                <span class="progress-text">Generando...</span>
+            </div>
+        </section>
+
+        <!-- SUDOKU -->
+        <section id="sudoku" class="tab-content">
+            <h2>Generador de Sudoku</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Titulo del Libro</label>
+                    <input type="text" id="su-title" value="Sudoku Puzzle Book">
+                </div>
+                <div class="form-group">
+                    <label>Dificultad</label>
+                    <select id="su-difficulty">
+                        <option value="easy">Facil (30-35 pistas)</option>
+                        <option value="medium" selected>Medio (26-29 pistas)</option>
+                        <option value="hard">Dificil (22-25 pistas)</option>
+                        <option value="expert">Experto (17-21 pistas)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Puzzles por pagina</label>
+                    <select id="su-perpg">
+                        <option value="1">1 (grande)</option>
+                        <option value="2" selected>2 (medio)</option>
+                        <option value="4">4 (pequeno)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Numero de puzzles</label>
+                    <input type="number" id="su-count" value="100" min="10" max="200">
+                </div>
+                <div class="form-group">
+                    <label>Tamano de pagina</label>
+                    <select id="su-pagesize" class="kdp-size-select">
+                        <option value="5x8">5 x 8</option>
+                        <option value="5.25x8">5.25 x 8</option>
+                        <option value="5.5x8.5">5.5 x 8.5</option>
+                        <option value="6x9" selected>6 x 9</option>
+                        <option value="6.14x9.21">6.14 x 9.21</option>
+                        <option value="6.69x9.61">6.69 x 9.61</option>
+                        <option value="7x10">7 x 10</option>
+                        <option value="7.44x9.69">7.44 x 9.69</option>
+                        <option value="7.5x9.25">7.5 x 9.25</option>
+                        <option value="8x10">8 x 10</option>
+                        <option value="8.25x6">8.25 x 6</option>
+                        <option value="letter">8.5 x 11</option>
+                        <option value="8.25x8.25">8.25 x 8.25</option>
+                        <option value="8.5x8.5">8.5 x 8.5</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Incluir soluciones</label>
+                    <select id="su-solutions">
+                        <option value="yes">Si, al final</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="btn-generate" onclick="generateSudoku()">Generar Libro de Sudoku (PDF)</button>
+                <button class="btn-batch" onclick="batchGenerate('sudoku')">Generar 5 Libros</button>
+            </div>
+            <div id="su-progress" class="progress-bar" style="display:none">
+                <div class="progress-fill"></div>
+                <span class="progress-text">Generando...</span>
+            </div>
+        </section>
+
+        <!-- JOURNAL / PLANNER -->
+        <section id="journal" class="tab-content">
+            <h2>Generador de Journals / Planners</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Titulo del Libro</label>
+                    <input type="text" id="jr-title" value="Daily Planner 2026">
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select id="jr-type">
+                        <option value="daily">Planificador Diario</option>
+                        <option value="weekly">Planificador Semanal</option>
+                        <option value="monthly">Planificador Mensual</option>
+                        <option value="gratitude">Diario de Gratitud</option>
+                        <option value="habit">Tracker de Habitos</option>
+                        <option value="fitness">Fitness Log</option>
+                        <option value="reading">Reading Log</option>
+                        <option value="dotgrid">Dot Grid Notebook</option>
+                        <option value="lined">Lined Notebook</option>
+                        <option value="cornell">Cornell Notes</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Numero de paginas</label>
+                    <input type="number" id="jr-pages" value="120" min="30" max="400">
+                </div>
+                <div class="form-group">
+                    <label>Tamano de pagina</label>
+                    <select id="jr-pagesize" class="kdp-size-select">
+                        <option value="5x8">5 x 8</option>
+                        <option value="5.25x8">5.25 x 8</option>
+                        <option value="5.5x8.5">5.5 x 8.5</option>
+                        <option value="6x9" selected>6 x 9</option>
+                        <option value="6.14x9.21">6.14 x 9.21</option>
+                        <option value="6.69x9.61">6.69 x 9.61</option>
+                        <option value="7x10">7 x 10</option>
+                        <option value="7.44x9.69">7.44 x 9.69</option>
+                        <option value="7.5x9.25">7.5 x 9.25</option>
+                        <option value="8x10">8 x 10</option>
+                        <option value="8.25x6">8.25 x 6</option>
+                        <option value="letter">8.5 x 11</option>
+                        <option value="8.25x8.25">8.25 x 8.25</option>
+                        <option value="8.5x8.5">8.5 x 8.5</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn-generate" onclick="generateJournal()">Generar Journal / Planner (PDF)</button>
+            <div id="jr-progress" class="progress-bar" style="display:none">
+                <div class="progress-fill"></div>
+                <span class="progress-text">Generando...</span>
+            </div>
+        </section>
+
+        <!-- COLORING BOOK -->
+        <section id="coloring" class="tab-content">
+            <h2>Coloring Book Builder</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Titulo del Libro</label>
+                    <input type="text" id="cb-title" value="Beautiful Flowers Coloring Book">
+                </div>
+                <div class="form-group">
+                    <label>Tamano de pagina</label>
+                    <select id="cb-pagesize" class="kdp-size-select">
+                        <option value="letter" selected>8.5 x 11</option>
+                        <option value="8.5x8.5">8.5 x 8.5</option>
+                        <option value="8.25x8.25">8.25 x 8.25</option>
+                        <option value="8x10">8 x 10</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Pagina en blanco entre ilustraciones</label>
+                    <select id="cb-blank">
+                        <option value="yes" selected>Si (recomendado)</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+                <div class="form-group full-width">
+                    <label>Sube tus ilustraciones (PNG/JPG generadas en OpenArt)</label>
+                    <input type="file" id="cb-images" multiple accept="image/*">
+                    <div id="cb-preview" class="image-preview"></div>
+                </div>
+            </div>
+            <div class="prompt-section">
+                <h3>Generador de Prompts para OpenArt</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Tema</label>
+                        <input type="text" id="cb-prompt-theme" value="flowers" placeholder="Ej: animals, mandalas, landscapes">
+                    </div>
+                    <div class="form-group">
+                        <label>Estilo</label>
+                        <select id="cb-prompt-style">
+                            <option value="detailed">Detallado (adultos)</option>
+                            <option value="simple">Simple (ninos)</option>
+                            <option value="mandala">Mandala</option>
+                            <option value="kawaii">Kawaii</option>
+                            <option value="realistic">Realista</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Cantidad de prompts</label>
+                        <input type="number" id="cb-prompt-count" value="30" min="10" max="60">
+                    </div>
+                </div>
+                <button class="btn-secondary" onclick="generateColoringPrompts()">Generar Prompts para OpenArt</button>
+                <div id="cb-prompts-output" class="prompts-output" style="display:none"></div>
+            </div>
+            <button class="btn-generate" onclick="generateColoringBook()">Montar PDF con Imagenes Subidas</button>
+        </section>
+
+        <!-- MATH PUZZLES -->
+        <section id="mathpuzzle" class="tab-content">
+            <h2>Generador de Math Puzzles</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Titulo del Libro</label>
+                    <input type="text" id="mp-title" value="Math Puzzles for Kids">
+                </div>
+                <div class="form-group">
+                    <label>Tipo de operaciones</label>
+                    <select id="mp-type">
+                        <option value="addition">Suma</option>
+                        <option value="subtraction">Resta</option>
+                        <option value="multiplication">Multiplicacion</option>
+                        <option value="division">Division</option>
+                        <option value="mixed" selected>Mixto</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Dificultad (rango de numeros)</label>
+                    <select id="mp-difficulty">
+                        <option value="easy">Facil (1-20)</option>
+                        <option value="medium" selected>Medio (1-100)</option>
+                        <option value="hard">Dificil (1-1000)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Problemas por pagina</label>
+                    <select id="mp-perpg">
+                        <option value="15">15</option>
+                        <option value="20" selected>20</option>
+                        <option value="30">30</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Numero de paginas de problemas</label>
+                    <input type="number" id="mp-pages" value="50" min="10" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Tamano de pagina</label>
+                    <select id="mp-pagesize" class="kdp-size-select">
+                        <option value="5x8">5 x 8</option>
+                        <option value="5.5x8.5">5.5 x 8.5</option>
+                        <option value="6x9" selected>6 x 9</option>
+                        <option value="7x10">7 x 10</option>
+                        <option value="8x10">8 x 10</option>
+                        <option value="letter">8.5 x 11</option>
+                    </select>
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="btn-generate" onclick="generateMathPuzzles()">Generar Libro de Math Puzzles (PDF)</button>
+                <button class="btn-batch" onclick="batchGenerate('mathpuzzle')">Generar 5 Libros</button>
+            </div>
+            <div id="mp-progress" class="progress-bar" style="display:none">
+                <div class="progress-fill"></div>
+                <span class="progress-text">Generando...</span>
+            </div>
+        </section>
+
+        <!-- EXTRA PUZZLES -->
+        <section id="extrapuzzles" class="tab-content">
+            <h2>Mas Puzzles</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Titulo del Libro</label>
+                    <input type="text" id="ep-title" value="Puzzle Book">
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Puzzle</label>
+                    <select id="ep-type">
+                        <option value="maze">Laberintos</option>
+                        <option value="numbersearch">Number Search</option>
+                        <option value="cryptogram">Criptogramas</option>
+                        <option value="crossword">Crucigramas</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Numero de puzzles</label>
+                    <input type="number" id="ep-count" value="30" min="5" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Tamano de pagina</label>
+                    <select id="ep-pagesize" class="kdp-size-select">
+                        <option value="5.5x8.5">5.5 x 8.5</option>
+                        <option value="6x9" selected>6 x 9</option>
+                        <option value="7x10">7 x 10</option>
+                        <option value="8x10">8 x 10</option>
+                        <option value="letter">8.5 x 11</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn-generate" onclick="generateExtraPuzzles()">Generar Libro de Puzzles (PDF)</button>
+            <div id="ep-progress" class="progress-bar" style="display:none">
+                <div class="progress-fill"></div>
+                <span class="progress-text">Generando...</span>
+            </div>
+        </section>
+
+        <!-- COVER GENERATOR -->
+        <section id="covers" class="tab-content">
+            <h2>Generador de Portadas</h2>
+            <p>Crea portadas basicas para tus libros KDP. Para portadas profesionales, usa Canva o similar.</p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Titulo</label>
+                    <input type="text" id="cv-title" value="My Puzzle Book" placeholder="Titulo del libro">
+                </div>
+                <div class="form-group">
+                    <label>Subtitulo</label>
+                    <input type="text" id="cv-subtitle" value="50+ Fun Puzzles" placeholder="Subtitulo (opcional)">
+                </div>
+                <div class="form-group">
+                    <label>Autor</label>
+                    <input type="text" id="cv-author" value="" placeholder="Tu nombre de autor">
+                </div>
+                <div class="form-group">
+                    <label>Paleta de colores</label>
+                    <select id="cv-palette">
+                        <option value="0">Azul Oscuro / Morado</option>
+                        <option value="1">Azul Marino / Cyan</option>
+                        <option value="2">Purpura Oscuro</option>
+                        <option value="3">Verde Bosque</option>
+                        <option value="4">Rojo Oscuro</option>
+                        <option value="5">Indigo</option>
+                        <option value="6">Dorado Oscuro</option>
+                        <option value="7">Beige Clasico</option>
+                        <option value="8">Blanco Limpio</option>
+                        <option value="9">Naranja Calido</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Patron decorativo</label>
+                    <select id="cv-pattern">
+                        <option value="dots">Puntos</option>
+                        <option value="lines">Lineas</option>
+                        <option value="border">Marco doble</option>
+                        <option value="geometric">Geometrico</option>
+                        <option value="minimal">Minimalista</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tamano de pagina</label>
+                    <select id="cv-pagesize" class="kdp-size-select">
+                        <option value="6x9" selected>6 x 9</option>
+                        <option value="5.5x8.5">5.5 x 8.5</option>
+                        <option value="7x10">7 x 10</option>
+                        <option value="8x10">8 x 10</option>
+                        <option value="letter">8.5 x 11</option>
+                        <option value="8.5x8.5">8.5 x 8.5</option>
+                    </select>
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="btn-generate" onclick="generateCover()">Generar Portada (PDF)</button>
+                <button class="btn-batch" onclick="generateCoverBatch()">Generar 5 Variantes</button>
+            </div>
+        </section>
+
+        <!-- METADATA GENERATOR -->
+        <section id="metadata" class="tab-content">
+            <h2>Generador de Metadatos KDP</h2>
+            <p>Genera titulos, descripciones y keywords optimizados para SEO en Amazon.</p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Tipo de libro</label>
+                    <select id="mt-type">
+                        <option value="wordsearch">Sopa de Letras</option>
+                        <option value="sudoku">Sudoku</option>
+                        <option value="coloring">Libro de Colorear</option>
+                        <option value="journal">Journal / Planner</option>
+                        <option value="math">Math Puzzles</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tema / Nicho</label>
+                    <input type="text" id="mt-theme" value="" placeholder="Ej: dogs, gardening, kids ages 8-12">
+                </div>
+                <div class="form-group">
+                    <label>Audiencia objetivo</label>
+                    <input type="text" id="mt-audience" value="" placeholder="Ej: adults, kids, seniors, women">
+                </div>
+            </div>
+            <button class="btn-generate" onclick="generateMetadata()">Generar Metadatos</button>
+            <div id="mt-output" class="metadata-output" style="display:none"></div>
+        </section>
+
+        <!-- ROYALTIES CALCULATOR -->
+        <section id="royalties" class="tab-content">
+            <h2>Calculadora de Royalties KDP</h2>
+            <p>Calcula tus ganancias por venta y proyecciones de ingresos.</p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Precio de lista (USD)</label>
+                    <input type="number" id="ry-price" value="9.99" min="0.99" max="250" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Numero de paginas</label>
+                    <input type="number" id="ry-pages" value="120" min="24" max="828">
+                </div>
+                <div class="form-group">
+                    <label>Tipo de interior</label>
+                    <select id="ry-interior">
+                        <option value="bw" selected>Blanco y negro</option>
+                        <option value="color">Color estandar</option>
+                        <option value="premium">Color premium</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Marketplace</label>
+                    <select id="ry-marketplace">
+                        <option value="us" selected>Amazon.com (US)</option>
+                        <option value="intl">Internacional</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tasa de royalty</label>
+                    <select id="ry-rate">
+                        <option value="60" selected>60% (Amazon.com directo)</option>
+                        <option value="40">40% (Distribucion expandida)</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn-generate" onclick="calculateRoyalties()">Calcular Royalties</button>
+            <div id="ry-output" class="royalty-output" style="display:none"></div>
+        </section>
+
+        <!-- Batch Status -->
+        <div id="batch-status" class="batch-status" style="display:none"></div>
+
+        <!-- Preview Modal -->
+        <div id="preview-modal" class="preview-modal" style="display:none">
+            <div class="preview-content">
+                <div class="preview-header">
+                    <h3>Vista Previa del PDF</h3>
+                    <div class="preview-actions">
+                        <button class="btn-secondary" onclick="closePreview()">Cerrar</button>
+                        <button class="btn-generate" onclick="downloadFromPreview()" style="width:auto;margin:0">Descargar PDF</button>
+                    </div>
+                </div>
+                <div id="preview-pages" class="preview-pages"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/word-search.js"></script>
+    <script src="js/sudoku.js"></script>
+    <script src="js/journal.js"></script>
+    <script src="js/coloring.js"></script>
+    <script src="js/math-puzzles.js"></script>
+    <script src="js/metadata.js"></script>
+    <script src="js/extra-puzzles.js"></script>
+    <script src="js/cover-generator.js"></script>
+    <script src="js/royalties.js"></script>
+    <script src="js/preview.js"></script>
+    <script src="js/batch.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
