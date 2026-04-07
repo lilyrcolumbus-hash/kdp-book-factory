@@ -32,6 +32,7 @@
             <button class="tab" data-tab="coloring">Colorear</button>
             <button class="tab" data-tab="mathpuzzle">Math</button>
             <button class="tab" data-tab="extrapuzzles">Mas Puzzles</button>
+            <button class="tab" data-tab="adhdplanner">ADHD Planner</button>
             <button class="tab" data-tab="covers">Portadas</button>
             <button class="tab" data-tab="metadata">Metadatos</button>
             <button class="tab" data-tab="royalties">Royalties</button>
@@ -380,6 +381,83 @@
             </div>
         </section>
 
+        <!-- ADHD PLANNER -->
+        <section id="adhdplanner" class="tab-content">
+            <h2>ADHD Planner Generator</h2>
+            <p>Planificador disenado especificamente para cerebros ADHD: simple, sin fechas, con instrucciones en cada pagina.</p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Titulo del Libro</label>
+                    <input type="text" id="adhd-title" value="ADHD Planner: Focus, Plan & Thrive" placeholder="Titulo del planificador">
+                </div>
+                <div class="form-group">
+                    <label>Subtitulo</label>
+                    <input type="text" id="adhd-subtitle" value="A Gentle Undated Planner for Your Brilliant Brain" placeholder="Subtitulo (opcional)">
+                </div>
+                <div class="form-group">
+                    <label>Autor</label>
+                    <input type="text" id="adhd-author" value="" placeholder="Tu nombre de autor">
+                </div>
+                <div class="form-group">
+                    <label>Semanas de contenido</label>
+                    <select id="adhd-weeks">
+                        <option value="8">8 semanas (~100 pags)</option>
+                        <option value="12" selected>12 semanas (~150 pags)</option>
+                        <option value="16">16 semanas (~200 pags)</option>
+                        <option value="24">24 semanas (~300 pags)</option>
+                        <option value="52">52 semanas (~650 pags)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tamano de pagina</label>
+                    <select id="adhd-pagesize" class="kdp-size-select">
+                        <option value="6x9">6 x 9 (popular)</option>
+                        <option value="7x10">7 x 10</option>
+                        <option value="8x10">8 x 10</option>
+                        <option value="letter" selected>8.5 x 11 (recomendado ADHD)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Pagina de Bienvenida e Instrucciones</label>
+                    <select id="adhd-welcome">
+                        <option value="yes" selected>Si (recomendado)</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tracker de Estado de Animo y Energia</label>
+                    <select id="adhd-mood">
+                        <option value="yes" selected>Si</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Habit Tracker Mensual</label>
+                    <select id="adhd-habits">
+                        <option value="yes" selected>Si</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+            </div>
+            <div class="adhd-features">
+                <h3>Cada semana incluye:</h3>
+                <ul style="color:#999;font-size:0.85rem;margin:8px 0 16px 20px;line-height:1.8">
+                    <li><strong>Weekly Overview</strong> — Vista semanal con check de energia por dia</li>
+                    <li><strong>7x Daily Focus</strong> — Solo 3 prioridades + time blocks + brain dump</li>
+                    <li><strong>Brain Dump</strong> — Pagina libre con dot grid para descargar pensamientos</li>
+                    <li><strong>Mood & Energy</strong> — Rastreo visual de estado de animo y energia</li>
+                    <li><strong>Weekly Reflection</strong> — Reflexion sin juicio: que funciono, que no</li>
+                </ul>
+            </div>
+            <div class="btn-row">
+                <button class="btn-generate" onclick="generateADHDPlanner()">Generar ADHD Planner (PDF)</button>
+            </div>
+            <div id="adhd-progress" class="progress-bar" style="display:none">
+                <div class="progress-fill"></div>
+                <span class="progress-text">Generando...</span>
+            </div>
+        </section>
+
         <!-- COVER GENERATOR -->
         <section id="covers" class="tab-content">
             <h2>Generador de Portadas</h2>
@@ -533,6 +611,7 @@
     <script src="js/math-puzzles.js"></script>
     <script src="js/metadata.js"></script>
     <script src="js/extra-puzzles.js"></script>
+    <script src="js/adhd-planner.js"></script>
     <script src="js/cover-generator.js"></script>
     <script src="js/royalties.js"></script>
     <script src="js/preview.js"></script>
