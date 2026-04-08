@@ -450,11 +450,18 @@
                 </ul>
             </div>
             <div class="btn-row">
-                <button class="btn-generate" onclick="generateADHDPlanner()">Generar ADHD Planner (PDF)</button>
+                <button class="btn-generate" onclick="generateADHDPlanner()">Generar ADHD Planner (PDF basico)</button>
             </div>
             <div id="adhd-progress" class="progress-bar" style="display:none">
                 <div class="progress-fill"></div>
                 <span class="progress-text">Generando...</span>
+            </div>
+
+            <div class="prompt-section" style="margin-top:24px">
+                <h3>Workflow PRO: Guia Pagina por Pagina para Canva</h3>
+                <p style="color:#999;font-size:0.85rem;margin-bottom:12px">Blueprint completo con prompts de imagen (Midjourney/DALL-E), texto exacto, colores hex, fuentes, e instrucciones paso a paso para crear el planner profesional en Canva.</p>
+                <button class="btn-generate" onclick="renderADHDWorkflow()" style="background:linear-gradient(135deg, #FF6F61, #764BA2)">Generar Blueprint PRO + Prompts de Imagen</button>
+                <div id="adhd-workflow-output" class="metadata-output" style="display:none;margin-top:16px;max-height:600px;overflow-y:auto"></div>
             </div>
         </section>
 
@@ -612,6 +619,7 @@
     <script src="js/metadata.js"></script>
     <script src="js/extra-puzzles.js"></script>
     <script src="js/adhd-planner.js"></script>
+    <script src="js/adhd-workflow.js"></script>
     <script src="js/cover-generator.js"></script>
     <script src="js/royalties.js"></script>
     <script src="js/preview.js"></script>
