@@ -118,6 +118,9 @@ async function generateWordSearch() {
     const includeSolutions = document.getElementById('ws-solutions').value === 'yes';
     const wordsInput = document.getElementById('ws-words').value.trim();
 
+    const bgStyle = document.getElementById('ws-bgstyle').value;
+    const bgTheme = document.getElementById('ws-bgtheme').value;
+
     const [pw, ph] = getPageDimensions(pageSize);
     const doc = new jsPDF({
         unit: 'pt',
@@ -128,6 +131,7 @@ async function generateWordSearch() {
     const puzzles = [];
 
     // Title page
+    drawTitlePageBackground(doc, bgTheme, bgStyle, pw, ph);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(28);
     doc.text(title, pw / 2, ph / 2 - 40, { align: 'center' });
@@ -154,6 +158,7 @@ async function generateWordSearch() {
         puzzles.push(puzzle);
 
         doc.addPage();
+        drawPageBackground(doc, bgTheme, bgStyle, pw, ph, i + 1, puzzleCount);
 
         // Puzzle number
         doc.setFont('helvetica', 'bold');

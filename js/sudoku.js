@@ -101,12 +101,16 @@ async function generateSudoku() {
     const pageSize = document.getElementById('su-pagesize').value;
     const includeSolutions = document.getElementById('su-solutions').value === 'yes';
 
+    const bgStyle = document.getElementById('su-bgstyle').value;
+    const bgTheme = document.getElementById('su-bgtheme').value;
+
     const [pw, ph] = getPageDimensions(pageSize);
     const doc = new jsPDF({ unit: 'pt', format: [pw, ph] });
     const margin = 40;
     const puzzles = [];
 
     // Title page
+    drawTitlePageBackground(doc, bgTheme, bgStyle, pw, ph);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(28);
     doc.text(title, pw/2, ph/2 - 40, { align: 'center' });
@@ -124,6 +128,7 @@ async function generateSudoku() {
         await tick();
 
         doc.addPage();
+        drawPageBackground(doc, bgTheme, bgStyle, pw, ph, p + 1, totalPages);
         const puzzlesThisPage = Math.min(perPage, count - puzzleIdx);
 
         if (perPage === 1) {

@@ -377,11 +377,15 @@ async function generateJournal() {
     const pages = parseInt(document.getElementById('jr-pages').value);
     const pageSize = document.getElementById('jr-pagesize').value;
 
+    const bgStyle = document.getElementById('jr-bgstyle').value;
+    const bgTheme = document.getElementById('jr-bgtheme').value;
+
     const [pw, ph] = getPageDimensions(pageSize);
     const doc = new jsPDF({ unit: 'pt', format: [pw, ph] });
     const margin = 40;
 
     // Title page
+    drawTitlePageBackground(doc, bgTheme, bgStyle, pw, ph);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(28);
     doc.text(title, pw/2, ph/2 - 20, { align: 'center' });
@@ -403,6 +407,7 @@ async function generateJournal() {
         showProgress('jr-progress', ((i+1)/pages) * 95, `Pagina ${i+1} de ${pages}...`);
         await tick();
         doc.addPage();
+        drawPageBackground(doc, bgTheme, bgStyle, pw, ph, i + 1, pages);
         drawFn[type](doc, pw, ph, margin, i + 1);
     }
 

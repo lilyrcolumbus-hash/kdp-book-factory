@@ -255,11 +255,15 @@ async function generateExtraPuzzles() {
     const count = parseInt(document.getElementById('ep-count').value);
     const pageSize = document.getElementById('ep-pagesize').value;
 
+    const bgStyle = document.getElementById('ep-bgstyle').value;
+    const bgTheme = document.getElementById('ep-bgtheme').value;
+
     const [pw, ph] = getPageDimensions(pageSize);
     const doc = new jsPDF({ unit: 'pt', format: [pw, ph] });
     const margin = 40;
 
     // Title page
+    drawTitlePageBackground(doc, bgTheme, bgStyle, pw, ph);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(28);
     doc.text(title, pw/2, ph/2 - 20, { align: 'center' });
@@ -273,6 +277,7 @@ async function generateExtraPuzzles() {
         showProgress('ep-progress', ((i+1)/count) * 85, `Puzzle ${i+1} de ${count}...`);
         await tick();
         doc.addPage();
+        drawPageBackground(doc, bgTheme, bgStyle, pw, ph, i + 1, count);
 
         if (puzzleType === 'maze') {
             const rows = 20;

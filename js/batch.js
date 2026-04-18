@@ -123,6 +123,38 @@ async function batchGenerate(type) {
                 await tick();
             }
 
+        } else if (type === 'kakuro') {
+            const title = document.getElementById('kk-title').value;
+            const difficulty = document.getElementById('kk-difficulty').value;
+            const count = Math.min(parseInt(document.getElementById('kk-count').value), 30);
+            const gridDim = parseInt(document.getElementById('kk-gridsize').value);
+            const pageSize = document.getElementById('kk-pagesize').value;
+            const [pw, ph] = getPageDimensions(pageSize);
+            doc = new jsPDF({ unit: 'pt', format: [pw, ph] });
+            filename = `Kakuro_${difficulty}_${date}_Vol${i+1}.pdf`;
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(28);
+            doc.text(`${title} - Vol.${i+1}`, pw/2, ph/2 - 20, { align: 'center' });
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${count} Puzzles`, pw/2, ph/2 + 15, { align: 'center' });
+
+            let puzzleNum = 0;
+            for (let p = 0; p < count; p++) {
+                const kakuro = generateKakuroGrid(gridDim, difficulty);
+                if (!kakuro) continue;
+                puzzleNum++;
+                doc.addPage();
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.setTextColor(0, 0, 0);
+                doc.text(`Puzzle ${puzzleNum}`, pw/2, 40, { align: 'center' });
+                const availSize = Math.min(pw - 80, ph - 100);
+                drawKakuroOnPage(doc, kakuro, (pw - availSize)/2, 55, availSize, false);
+                await tick();
+            }
+
         } else {
             statusEl.textContent = 'Tipo no soportado para batch.';
             return;

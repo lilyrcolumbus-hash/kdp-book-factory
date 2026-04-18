@@ -52,12 +52,16 @@ async function generateMathPuzzles() {
     const pages = parseInt(document.getElementById('mp-pages').value);
     const pageSize = document.getElementById('mp-pagesize').value;
 
+    const bgStyle = document.getElementById('mp-bgstyle').value;
+    const bgTheme = document.getElementById('mp-bgtheme').value;
+
     const [pw, ph] = getPageDimensions(pageSize);
     const doc = new jsPDF({ unit: 'pt', format: [pw, ph] });
     const margin = 40;
     const allProblems = [];
 
     // Title page
+    drawTitlePageBackground(doc, bgTheme, bgStyle, pw, ph);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(28);
     doc.text(title, pw/2, ph/2 - 40, { align: 'center' });
@@ -73,6 +77,7 @@ async function generateMathPuzzles() {
         await tick();
 
         doc.addPage();
+        drawPageBackground(doc, bgTheme, bgStyle, pw, ph, p + 1, pages);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
         doc.text(`Page ${p + 1}`, pw/2, margin - 5, { align: 'center' });
