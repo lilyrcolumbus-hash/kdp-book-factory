@@ -86,6 +86,7 @@ const UI_STRINGS = {
             covers: 'Portadas',
             metadata: 'Metadatos',
             royalties: 'Royalties',
+            imageprompts: 'Image Prompts',
         },
     },
     en: {
@@ -103,6 +104,7 @@ const UI_STRINGS = {
             covers: 'Covers',
             metadata: 'Metadata',
             royalties: 'Royalties',
+            imageprompts: 'Image Prompts',
         },
     },
 };

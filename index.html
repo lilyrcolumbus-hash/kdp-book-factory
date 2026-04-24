@@ -36,6 +36,7 @@
             <button class="tab" data-tab="covers">Portadas</button>
             <button class="tab" data-tab="metadata">Metadatos</button>
             <button class="tab" data-tab="royalties">Royalties</button>
+            <button class="tab" data-tab="imageprompts">Image Prompts</button>
         </nav>
 
         <!-- WORD SEARCH -->
@@ -593,6 +594,23 @@
             <div id="ry-output" class="royalty-output" style="display:none"></div>
         </section>
 
+        <!-- IMAGE PROMPTS -->
+        <section id="imageprompts" class="tab-content">
+            <h2>Generador de Prompts de Imagenes (Unicos por Libro)</h2>
+            <p>Cada generacion produce una combinacion 100% diferente: background maestro, ilustraciones reusables, portada, paleta de colores y fonts. Asi tus libros nunca se ven iguales.</p>
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label>Nicho del Libro</label>
+                    <select id="ip-niche">
+                        <option value="adhd">ADHD Planner</option>
+                        <option value="senior">Senior / Large Print</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn-generate" onclick="generateImagePrompts()">Generar Prompts Unicos</button>
+            <div id="ip-output" class="metadata-output" style="margin-top:20px"></div>
+        </section>
+
         <!-- Batch Status -->
         <div id="batch-status" class="batch-status" style="display:none"></div>
 
@@ -622,6 +640,7 @@
     <script src="js/adhd-workflow.js"></script>
     <script src="js/cover-generator.js"></script>
     <script src="js/royalties.js"></script>
+    <script src="js/image-prompts.js"></script>
     <script src="js/preview.js"></script>
     <script src="js/batch.js"></script>
     <script src="js/storage.js"></script>
