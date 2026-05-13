@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#C8602F"/>
+  <g transform="translate(256 256)">
+    <rect x="-150" y="-110" width="120" height="180" rx="6" fill="#FBF6EC" stroke="#8B3F1A" stroke-width="6"/>
+    <rect x="-145" y="-105" width="110" height="170" fill="#FBF6EC"/>
+    <line x1="-130" y1="-70" x2="-50" y2="-70" stroke="#C8602F" stroke-width="5"/>
+    <line x1="-130" y1="-45" x2="-50" y2="-45" stroke="#C8602F" stroke-width="5"/>
+    <line x1="-130" y1="-20" x2="-50" y2="-20" stroke="#C8602F" stroke-width="5"/>
+    <line x1="-130" y1="5" x2="-50" y2="5" stroke="#C8602F" stroke-width="5"/>
+    <line x1="-130" y1="30" x2="-50" y2="30" stroke="#C8602F" stroke-width="5"/>
+    <rect x="30" y="-130" width="120" height="200" rx="6" fill="#D4A574" stroke="#8B3F1A" stroke-width="6"/>
+    <rect x="35" y="-125" width="110" height="190" fill="#D4A574"/>
+    <text x="90" y="-40" font-family="Helvetica, sans-serif" font-size="36" font-weight="900" text-anchor="middle" fill="#FBF6EC">KDP</text>
+    <line x1="50" y1="-10" x2="130" y2="-10" stroke="#FBF6EC" stroke-width="3"/>
+    <text x="90" y="35" font-family="Helvetica, sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="#FBF6EC">FACTORY</text>
+  </g>
+  <text x="256" y="450" font-family="Helvetica, sans-serif" font-size="42" font-weight="900" text-anchor="middle" fill="#FBF6EC">KDP Books</text>
+</svg>

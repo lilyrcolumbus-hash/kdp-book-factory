@@ -506,8 +506,21 @@ label { color: var(--text-primary) !important; font-size: 13px !important; font-
 @media (max-width: 768px) {
   .app { padding: 16px !important; }
   header h1 { font-size: 1.5rem !important; }
-  .tabs { padding: 6px !important; gap: 2px !important; }
-  .tab { padding: 8px 10px !important; font-size: 12px !important; }
+  .tabs {
+    padding: 6px !important;
+    gap: 2px !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+  .tabs::-webkit-scrollbar { display: none !important; }
+  .tab {
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+    flex-shrink: 0 !important;
+    min-height: 40px !important;
+  }
   .tab-content { padding: 16px !important; }
   #bw-app { grid-template-columns: 1fr !important; }
   #bw-side { position: static !important; }
@@ -515,6 +528,36 @@ label { color: var(--text-primary) !important; font-size: 13px !important; font-
   .bw-style-grid, .bw-palette-grid, .bw-radio-grid { grid-template-columns: repeat(2, 1fr) !important; }
   .bw-section-row { grid-template-columns: 1fr !important; gap: 4px !important; }
   .bw-keywords-grid { grid-template-columns: 1fr !important; }
+  .bw-mascot-grid { grid-template-columns: 1fr !important; }
+  #bw-stages-nav {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    flex-wrap: nowrap !important;
+  }
+  #bw-stages-nav::-webkit-scrollbar { display: none !important; }
+  #bw-stages-nav > * { flex-shrink: 0 !important; }
+  /* iOS touch ergonomics — minimum tap target 40px, no tap highlight flash */
+  button, .iw-btn, .bw-mascot-card, .bw-style-card, .bw-palette-card {
+    min-height: 40px !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+  .iw-openart-config { padding: 12px !important; }
+  .iw-openart-config-neg code {
+    font-size: 11px !important;
+    word-break: break-word !important;
+  }
+  .iw-prompt {
+    font-size: 12px !important;
+    word-break: break-word !important;
+  }
+  /* PWA standalone mode — respect iOS safe area (notch + home indicator) */
+  body { padding-bottom: env(safe-area-inset-bottom, 0) !important; }
+}
+
+/* PWA standalone — slightly different shell when running from home-screen */
+@media (display-mode: standalone) {
+  .app { padding-top: max(16px, env(safe-area-inset-top, 0)) !important; }
 }
 
 /* ========== Print readability check ========== */
