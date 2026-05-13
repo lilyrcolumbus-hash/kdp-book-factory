@@ -1,0 +1,55 @@
+{
+  "$schema": "./manifest.schema.json",
+  "bookId": "mega-brain-games-teens-vol1-TEST",
+  "version": "1.0",
+  "title": "Mega Brain Games for Teens — TEST RUN (3 pages only)",
+  "language": "en",
+  "trim":         { "width_in": 6, "height_in": 9, "bleed_in": 0.125 },
+  "dpi":          300,
+  "imageSize_px": { "width": 1875, "height": 2775 },
+  "stylePreset":  "brain-squad-aesthetic-humor",
+  "samplesPerPage": 3,
+  "compliance": {
+    "aiDisclosure": true,
+    "kdpSafe":      true,
+    "noText":       true,
+    "noTrademarks": true,
+    "noFaces":      false
+  },
+  "engineRouting": {
+    "cover-front":       "flux-pro-ultra",
+    "cover-back":        "flux-pro-ultra",
+    "section-divider":   "flux-pro-ultra",
+    "interior-bg-full":  "flux-pro-ultra",
+    "interior-bg-soft":  "flux-pro-ultra",
+    "decorative-corner": "flux-pro-ultra"
+  },
+  "callback": {
+    "webhookUrl": "http://localhost:8080/n8n-callback",
+    "outputDir":  "./output/mega-brain-games-teens-vol1-TEST"
+  },
+  "pageCount": 200,
+  "pages": [
+    {
+      "n": 0,
+      "type": "cover-front",
+      "prompt": "Book cover background design for a teen puzzle book. Solid saturated terracotta orange background (#C8602F) covering the entire 6x9 inch page. Hand-drawn doodle pattern scattered across edges and corners (NOT center) in cream/off-white color (#F5E6D3): cartoon brain wearing tiny sunglasses, magnifying glass, headphones, pencil with smiling face, calculator with eyes, lightbulb with small crown, takeaway coffee cup, six-sided dice, padlock with question mark, mini lightning bolt, small four-pointed stars and sparkles, paper airplane, single eyeball, tiny maze pattern, exclamation mark cloud, sweat drops, simple speech bubbles. Doodles in cream color with thin clean line style, flat 2D vector illustration, no shading or gradients, slightly imperfect hand-drawn aesthetic. Density: medium-loose, evenly distributed around perimeter and corners. Center 60% of page kept relatively empty (only 2-3 small subtle doodles) for title text overlay. Memphis design influence, modern teen aesthetic, slightly playful, slightly mischievous. KDP 6x9 paperback cover, 300 DPI, full bleed.",
+      "out": "TEST-cover-front.png",
+      "notes": "VALIDA: paleta terracotta + estilo doodles + composición (centro libre para título)"
+    },
+    {
+      "n": 3,
+      "type": "section-divider",
+      "prompt": "Book interior section divider page on cream paper background (#F5E6D3). Top horizontal band 25% of page height in solid muted sage green (#8B9D7E), kept clean and flat for text overlay. Bottom horizontal band 12% in solid warm terracotta (#C8602F), kept clean for page number. Center middle area: large flat vector illustration of vintage magnifying glass with brass/copper frame and brown wooden handle, positioned at 30-degree diagonal angle, with curving dotted trail line emerging suggesting search path. Around magnifying glass: 5-7 small puzzle piece silhouettes scattered, 3-4 small four-pointed sparkle stars, 2-3 small dotted trails. Center elements in muted earthy palette: sage green, terracotta, warm brown (#8B6F47), cream. Hand-drawn doodle style, flat vector, clean thin lines, no gradients, no shading, modern teen aesthetic, mystery/detective vibe, warm and inviting. KDP 6x9 interior, 300 DPI.",
+      "out": "TEST-p003-divider-word-hunters.png",
+      "notes": "VALIDA: layout interior (band arriba + band abajo + ilustración centro) + paleta interior aesthetic"
+    },
+    {
+      "n": 180,
+      "type": "interior-bg-soft",
+      "prompt": "Book interior decorative quote page background. Cream paper texture (#F5E6D3) covering 90% of 6x9 inch page. ONLY two small decorative corner illustrations: top-right corner small flat vector cartoon brain with tiny crown on top, in muted sage green (#8B9D7E), thin clean lines, occupying ~8% of corner area; bottom-left corner small flat vector cluster of 3 four-pointed stars and 2 sparkles in muted terracotta (#C8602F), occupying ~5% of corner area. Center 75% of page kept clean cream texture only (no elements, no decoration) for humorous quote text overlay. Hand-drawn doodle style, flat vector, no gradients, no shading, minimal, modern teen aesthetic, warm and slightly playful. KDP 6x9 interior page, 300 DPI.",
+      "out": "TEST-p180-quote-page.png",
+      "notes": "VALIDA: páginas interiores con espacio para texto + decoración mínima en esquinas"
+    }
+  ]
+}

@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KDP Book Factory</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/theme-warm.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
     <div class="app">
@@ -13,33 +15,159 @@
             <div class="header-top">
                 <div>
                     <h1>KDP Book Factory</h1>
-                    <p class="subtitle">Genera libros listos para Amazon KDP en segundos</p>
+                    <p class="subtitle">Generate Amazon KDP-ready books in seconds</p>
                 </div>
                 <div class="header-actions">
-                    <select id="lang-selector" onchange="switchLanguage(this.value)">
-                        <option value="es">Espanol</option>
-                        <option value="en">English</option>
-                    </select>
                     <button class="btn-small" onclick="resetAllConfigs()">Reset Config</button>
                 </div>
             </div>
         </header>
 
         <nav class="tabs">
-            <button class="tab active" data-tab="wordsearch">Sopas de Letras</button>
-            <button class="tab" data-tab="sudoku">Sudoku</button>
-            <button class="tab" data-tab="journal">Journals</button>
-            <button class="tab" data-tab="coloring">Colorear</button>
-            <button class="tab" data-tab="mathpuzzle">Math</button>
-            <button class="tab" data-tab="extrapuzzles">Mas Puzzles</button>
-            <button class="tab" data-tab="adhdplanner">ADHD Planner</button>
-            <button class="tab" data-tab="covers">Portadas</button>
-            <button class="tab" data-tab="metadata">Metadatos</button>
-            <button class="tab" data-tab="royalties">Royalties</button>
+            <button class="tab active" data-tab="bookwizard">📚 Create Book</button>
+            <button class="tab" data-tab="imagesai">🎨 AI Images</button>
+            <button class="tab legacy-tab" data-tab="wordsearch">Word Search</button>
+            <button class="tab legacy-tab" data-tab="sudoku">Sudoku</button>
+            <button class="tab legacy-tab" data-tab="journal">Journals</button>
+            <button class="tab legacy-tab" data-tab="coloring">Coloring</button>
+            <button class="tab legacy-tab" data-tab="mathpuzzle">Math</button>
+            <button class="tab legacy-tab" data-tab="extrapuzzles">More Puzzles</button>
+            <button class="tab legacy-tab" data-tab="adhdplanner">ADHD</button>
+            <button class="tab legacy-tab" data-tab="covers">Covers</button>
+            <button class="tab legacy-tab" data-tab="metadata">Metadata</button>
+            <button class="tab legacy-tab" data-tab="royalties">Royalties</button>
+            <button class="tools-toggle" id="tools-toggle" type="button">🛠️ Advanced Tools</button>
         </nav>
 
+        <!-- BOOK WIZARD -->
+        <section id="bookwizard" class="tab-content active">
+            <style>
+                #bw-app { display:grid; grid-template-columns: 1fr 320px; gap:20px; max-width:1400px; }
+                #bw-main { min-width:0; }
+                #bw-side { background:#0e1f25; padding:14px; border-radius:10px; height:fit-content; position:sticky; top:10px; }
+                #bw-header { margin-bottom:14px; }
+                .bw-header-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+                #bw-project-select { flex:1; min-width:200px; padding:8px 10px; }
+                #bw-stages-nav { display:flex; gap:6px; margin-bottom:18px; flex-wrap:wrap; position:sticky; top:0; z-index:50; background:var(--bg-page, #FAF6F0); padding:10px 4px; border-bottom:1px solid var(--border-light, #E8E0D5); }
+                .bw-stage-btn { background:#1a1a1a; border:1px solid #2a2a2a; color:#aaa; padding:8px 12px; border-radius:8px; cursor:pointer; display:flex; gap:6px; align-items:center; font-size:12px; }
+                .bw-stage-btn.active { background:#FF6B9D; color:#fff; border-color:#FF6B9D; }
+                .bw-stage-num { background:rgba(255,255,255,.2); padding:1px 6px; border-radius:10px; font-weight:700; }
+                .bw-stage-btn:not(.active) .bw-stage-num { background:#2a2a2a; }
+                #bw-stage-content { background:#161616; padding:20px; border-radius:10px; }
+                #bw-stage-content h3 { margin:0 0 6px; }
+                .bw-help { color:#888; font-size:13px; margin:0 0 18px; }
+                .bw-help-small { color:#888; font-size:11px; line-height:1.4; }
+                .bw-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:18px; }
+                .bw-field { display:flex; flex-direction:column; gap:6px; }
+                .bw-field-wide { grid-column: span 2; }
+                .bw-field label { font-size:12px; color:#aaa; font-weight:600; }
+                .bw-field input, .bw-field select, .bw-field textarea, .bw-section input, .bw-section textarea, .bw-section select { background:#0e0e0e; border:1px solid #2a2a2a; color:#eee; padding:9px 11px; border-radius:6px; font-family:inherit; font-size:13px; }
+                .bw-section { margin-bottom:18px; }
+                .bw-section > label { display:block; font-size:12px; color:#aaa; font-weight:600; margin-bottom:8px; }
+                .bw-age-row { display:flex; gap:8px; align-items:center; }
+                .bw-age-row input { width:80px; }
+                .bw-radio-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; }
+                .bw-radio-card { background:#0e0e0e; border:1px solid #2a2a2a; padding:10px; border-radius:8px; cursor:pointer; transition:all .15s; }
+                .bw-radio-card.selected { border-color:#FF6B9D; background:#1a0e15; }
+                .bw-radio-card input { display:none; }
+                .bw-radio-card-name { font-weight:600; font-size:13px; margin-bottom:4px; }
+                .bw-radio-card-desc { font-size:11px; color:#888; line-height:1.4; }
+                .bw-pill-row { display:flex; gap:6px; flex-wrap:wrap; }
+                .bw-pill { background:#1a1a1a; border:1px solid #2a2a2a; color:#aaa; padding:6px 12px; border-radius:14px; cursor:pointer; font-size:12px; transition:all .15s; }
+                .bw-pill.selected { background:#FF6B9D; border-color:#FF6B9D; color:#fff; }
+                .bw-pill:hover { border-color:#FF6B9D; }
+                .bw-style-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
+                .bw-style-card { background:#0e0e0e; border:1px solid #2a2a2a; padding:14px 8px; border-radius:8px; cursor:pointer; display:flex; flex-direction:column; gap:4px; align-items:center; transition:all .15s; }
+                .bw-style-card.selected { border-color:#4ECDC4; background:#0e2a26; }
+                .bw-style-emoji { font-size:24px; }
+                .bw-style-name { font-size:12px; font-weight:600; }
+                .bw-style-tags { font-size:10px; color:#888; }
+                .bw-palette-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
+                .bw-palette-card { background:#0e0e0e; border:1px solid #2a2a2a; padding:10px; border-radius:8px; cursor:pointer; }
+                .bw-palette-card.selected { border-color:#FFD93D; }
+                .bw-palette-swatches { display:flex; gap:4px; margin-bottom:6px; }
+                .bw-palette-swatches span { width:24px; height:24px; border-radius:4px; border:1px solid rgba(255,255,255,.1); }
+                .bw-palette-name { font-size:11px; color:#ccc; }
+                .bw-toggle { display:flex; gap:8px; align-items:center; }
+                .bw-section-row { display:grid; grid-template-columns:2fr 1.5fr 80px 30px; gap:6px; margin-bottom:6px; }
+                .bw-check { display:inline-flex; align-items:center; gap:6px; margin-right:14px; font-size:12px; cursor:pointer; }
+                .bw-actions-row { display:flex; gap:10px; justify-content:space-between; margin-top:20px; padding-top:14px; border-top:1px solid #2a2a2a; }
+                .bw-btn { padding:9px 16px; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:500; }
+                .bw-btn-primary { background:#FF6B9D; color:#fff; }
+                .bw-btn-ghost { background:#2a2a2a; color:#ddd; }
+                .bw-btn-tiny { padding:4px 8px; font-size:11px; }
+                .bw-keywords-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+                .bw-counter { font-size:11px; color:#888; }
+                .bw-counter.err { color:#FF6B6B; font-weight:700; }
+                .bw-royalty-box { background:#0e1f25; border-left:3px solid #4ECDC4; padding:14px; border-radius:6px; margin:14px 0; }
+                .bw-royalty-amount { font-size:24px; font-weight:700; margin:6px 0; }
+                .bw-royalty-amount.good { color:#4ECDC4; }
+                .bw-royalty-amount.warn { color:#FFD93D; }
+                .bw-royalty-amount.neg { color:#FF6B6B; }
+                .bw-royalty-formula { font-size:11px; color:#888; }
+                .bw-summary > div { padding:6px 0; border-bottom:1px solid #2a2a2a; font-size:13px; }
+                .bw-summary > div:last-child { border-bottom:none; }
+                .bw-handoff { margin-top:18px; }
+                .bw-handoff-card { display:flex; gap:14px; align-items:flex-start; background:#0e0e0e; padding:12px; border-radius:8px; margin-bottom:8px; border:1px solid #2a2a2a; }
+                .bw-handoff-num { background:#FF6B9D; color:#fff; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0; }
+                .bw-handoff-card > div { flex:1; }
+                /* Sidebar */
+                #bw-side h4 { margin:0 0 10px; }
+                .bw-ref-dropzone { border:2px dashed #444; border-radius:8px; padding:20px; text-align:center; color:#888; cursor:pointer; margin-bottom:12px; transition:all .15s; }
+                .bw-ref-dropzone:hover, .bw-ref-dropzone.dragover { border-color:#4ECDC4; color:#fff; }
+                .bw-ref-tags-input textarea { width:100%; background:#0e0e0e; border:1px solid #2a2a2a; color:#eee; padding:8px; border-radius:6px; font-family:inherit; font-size:12px; margin-top:8px; box-sizing:border-box; }
+                .bw-ref-tags-input label { font-size:11px; color:#aaa; }
+                .bw-ref-list { margin-top:12px; }
+                .bw-ref-card { background:#0e0e0e; border:1px solid #2a2a2a; padding:10px; border-radius:8px; margin-bottom:8px; }
+                .bw-ref-imgs { display:flex; gap:4px; margin-bottom:6px; }
+                .bw-ref-imgs img { width:40px; height:55px; object-fit:cover; border-radius:4px; }
+                .bw-ref-imgs span { color:#888; font-size:11px; align-self:center; }
+                .bw-ref-tags { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:4px; }
+                .bw-tag { background:#1a1a1a; padding:2px 8px; border-radius:8px; font-size:10px; color:#4ECDC4; }
+                .bw-ref-notes { font-size:11px; color:#aaa; font-style:italic; margin-bottom:6px; }
+                .bw-ref-extracted { font-size:11px; color:#4ECDC4; margin-bottom:6px; }
+                .bw-empty { color:#666; font-size:12px; text-align:center; padding:20px 0; }
+                /* Compliance */
+                #bw-compliance { margin-top:18px; padding-top:14px; border-top:1px solid #2a4a52; }
+                .bw-score { display:flex; flex-direction:column; align-items:center; padding:12px; border-radius:8px; margin-bottom:10px; }
+                .bw-score.good { background:#0e3a32; color:#4ECDC4; }
+                .bw-score.warn { background:#3a2f10; color:#FFD93D; }
+                .bw-score.bad { background:#3a0e15; color:#FF6B6B; }
+                .bw-score-num { font-size:32px; font-weight:700; }
+                .bw-score-label { font-size:11px; opacity:.8; }
+                .bw-issues { display:flex; flex-direction:column; gap:4px; }
+                .bw-issue { font-size:11px; padding:6px 8px; border-radius:4px; line-height:1.4; }
+                .bw-issue.ok { background:#0e3a32; color:#4ECDC4; }
+                .bw-issue.error { background:#3a0e15; color:#FFB4B4; }
+                .bw-issue.warn { background:#3a2f10; color:#FFD9A0; }
+                .bw-issue-stage { background:rgba(0,0,0,.3); padding:1px 5px; border-radius:6px; margin:0 4px; font-weight:700; }
+                /* Toast */
+                #bw-toast { position:fixed; bottom:24px; right:24px; background:#FF6B9D; color:#fff; padding:12px 18px; border-radius:8px; z-index:9999; opacity:0; transition:opacity .3s; box-shadow:0 4px 20px rgba(0,0,0,.4); }
+                #bw-toast.show { opacity:1; }
+                @media (max-width: 900px) {
+                    #bw-app { grid-template-columns: 1fr; }
+                    #bw-side { position:static; }
+                    .bw-grid { grid-template-columns: 1fr; }
+                }
+            </style>
+            <h2>📚 Create Book — Wizard</h2>
+            <div id="dd0-root"></div>
+            <div id="bw-header"></div>
+            <div id="bw-app">
+                <div id="bw-main">
+                    <div id="bw-stages-nav"></div>
+                    <div id="bw-stage-content"></div>
+                </div>
+                <aside id="bw-side">
+                    <div id="bw-series-panel"></div>
+                    <div id="bw-compliance"></div>
+                </aside>
+            </div>
+            <div id="bw-toast"></div>
+        </section>
+
         <!-- WORD SEARCH -->
-        <section id="wordsearch" class="tab-content active">
+        <section id="wordsearch" class="tab-content">
             <h2>Generador de Sopas de Letras</h2>
             <div class="form-grid">
                 <div class="form-group">
@@ -593,6 +721,101 @@
             <div id="ry-output" class="royalty-output" style="display:none"></div>
         </section>
 
+        <!-- IMAGES AI WORKFLOW -->
+        <section id="imagesai" class="tab-content">
+            <style>
+                .iw-wrap { max-width: 980px; }
+                .iw-header-bar { display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-bottom:20px; }
+                .iw-book-select { padding:8px 12px; border-radius:6px; min-width:280px; }
+                .iw-progress { flex:1; min-width:240px; }
+                .iw-progress-bar { height:14px; background:#222; border-radius:7px; overflow:hidden; }
+                .iw-progress-fill { height:100%; background:linear-gradient(90deg,#4ECDC4,#FF6B9D); transition:width .3s; width:0%; }
+                .iw-progress-text { font-size:12px; opacity:.8; margin-top:4px; }
+                .iw-actions-row { display:flex; gap:10px; flex-wrap:wrap; margin:16px 0 24px; }
+                .iw-actions-row button { padding:10px 16px; }
+                .iw-panels { display:flex; flex-direction:column; gap:14px; }
+                .iw-panel { background:#1a1a1a; border:1px solid #2a2a2a; border-radius:10px; padding:16px; }
+                .iw-panel.done { border-color:#4ECDC4; }
+                .iw-panel-head { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+                .iw-panel-emoji { font-size:22px; }
+                .iw-panel-name { font-weight:600; font-size:15px; flex:1; }
+                .iw-status { padding:3px 10px; border-radius:12px; font-size:11px; font-weight:600; }
+                .iw-status.pending { background:#3a2f10; color:#ffb74d; }
+                .iw-status.done { background:#0f3a32; color:#4ECDC4; }
+                .iw-prompt { background:#0e0e0e; border:1px solid #2a2a2a; padding:10px 12px; border-radius:6px; font-family: ui-monospace, Menlo, monospace; font-size:12px; line-height:1.5; max-height:90px; overflow:auto; color:#bbb; white-space:pre-wrap; }
+                .iw-panel.expanded .iw-prompt { max-height:none; }
+                .iw-panel-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+                .iw-btn { padding:8px 14px; border-radius:6px; border:none; cursor:pointer; font-size:13px; font-weight:500; }
+                .iw-btn-primary { background:#FF6B9D; color:#fff; }
+                .iw-btn-primary:hover { filter:brightness(1.1); }
+                .iw-btn-ghost { background:#2a2a2a; color:#ddd; }
+                .iw-btn-ghost:hover { background:#3a3a3a; }
+                .iw-dropzone { margin-top:12px; border:2px dashed #444; border-radius:8px; padding:24px; text-align:center; color:#888; cursor:pointer; transition:all .2s; }
+                .iw-dropzone:hover, .iw-dropzone.dragover { border-color:#FF6B9D; color:#fff; background:#1a0e15; }
+                .iw-thumb-row { margin-top:12px; display:flex; gap:12px; align-items:flex-start; }
+                .iw-thumb { width:120px; height:160px; object-fit:cover; border-radius:6px; border:1px solid #2a2a2a; }
+                .iw-thumb-meta { flex:1; font-size:12px; color:#aaa; }
+                .iw-thumb-meta strong { display:block; color:#fff; margin-bottom:6px; font-size:13px; }
+                .iw-toast { position:fixed; bottom:24px; right:24px; background:#FF6B9D; color:#fff; padding:12px 18px; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,.4); font-size:13px; z-index:9999; opacity:0; transition:opacity .3s; }
+                .iw-toast.show { opacity:1; }
+                .iw-empty { text-align:center; padding:40px; color:#888; }
+                .iw-quick-help { background:#0e1f25; border-left:3px solid #4ECDC4; padding:12px 16px; border-radius:6px; margin-bottom:20px; font-size:13px; line-height:1.6; }
+                .iw-quick-help b { color:#4ECDC4; }
+                .iw-quick-help details { margin-bottom:10px; }
+                .iw-quick-help summary { cursor:pointer; padding:6px 0; user-select:none; }
+                .iw-quick-help summary:hover { color:#4ECDC4; }
+                .iw-setup-content { padding:12px 0 8px 16px; border-left:1px dashed #2a4a52; margin-top:8px; }
+                .iw-setup-content ol { margin:8px 0; padding-left:18px; }
+                .iw-setup-content li { margin-bottom:8px; }
+                .iw-bookmarklet { display:inline-block; padding:10px 22px; background:#FFD93D; color:#000; border-radius:8px; font-weight:700; text-decoration:none; margin:14px 0 8px; cursor:grab; user-select:none; box-shadow:0 2px 8px rgba(255,217,61,.3); border:2px dashed transparent; transition:all .15s; }
+                .iw-bookmarklet:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(255,217,61,.4); border-color:#fff; }
+                .iw-bookmarklet:active { cursor:grabbing; }
+                .iw-bookmarklet-code { width:100%; height:90px; font-family:ui-monospace,Menlo,monospace; font-size:11px; padding:8px; margin:8px 0; background:#000; color:#4ECDC4; border-radius:4px; border:1px solid #2a2a2a; box-sizing:border-box; }
+            </style>
+
+            <div class="iw-wrap">
+                <h2>AI Images - Workflow</h2>
+                <div class="iw-quick-help">
+                    <details>
+                        <summary><b>⚙️ Quick setup (one time) — bookmarklet for almost automatic workflow</b></summary>
+                        <div class="iw-setup-content">
+                            <ol>
+                                <li><b>Configure OpenArt once:</b> open OpenArt → Create → select <b>Flux 1.1 Pro</b> model + <b>2:3</b> aspect + 3 samples. Generate 1 test image. Those settings stay as default while your session is active.</li>
+                                <li><b>Pin the tab:</b> right-click OpenArt tab → "Pin Tab". That way it won't close between images.</li>
+                                <li><b>Install the bookmarklet:</b> show bookmarks bar (Cmd+Shift+B), then <b>drag the yellow button below</b> to your bookmarks bar.</li>
+                            </ol>
+                            <a href='javascript:(async()=>{try{const t=await navigator.clipboard.readText();const i=document.querySelector("textarea[placeholder*=prompt i],textarea[name*=prompt i],textarea");if(i){const s=Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,"value").set;s.call(i,t);i.dispatchEvent(new Event("input",{bubbles:true}));i.focus();}else{alert("Prompt field not found on this page")}}catch(e){alert("Error: "+e.message)}})();' class="iw-bookmarklet" draggable="true">⭐ Paste OpenArt — drag me to bookmarks bar</a>
+                            <details>
+                                <summary style="font-size:12px;opacity:.7;">Or copy code manually to create bookmark</summary>
+                                <textarea class="iw-bookmarklet-code" readonly onclick="this.select()">javascript:(async()=>{try{const t=await navigator.clipboard.readText();const i=document.querySelector("textarea[placeholder*=prompt i],textarea[name*=prompt i],textarea");if(i){const s=Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,"value").set;s.call(i,t);i.dispatchEvent(new Event("input",{bubbles:true}));i.focus();}else{alert("Prompt field not found on this page")}}catch(e){alert("Error: "+e.message)}})();</textarea>
+                                <p style="font-size:12px;opacity:.7;margin:4px 0;">Create a new bookmark (any name, e.g. "Paste OpenArt") and paste the code in the URL field.</p>
+                            </details>
+                            <p style="margin-top:12px;"><b>Final workflow:</b> click <b>📋 Copy</b> here → Cmd+Tab to OpenArt → click <b>Paste OpenArt</b> bookmark → click <b>Generate</b>. Done.</p>
+                        </div>
+                    </details>
+                    <b>How it works (no setup):</b> 1) Click "Copy + Open OpenArt" on a panel. 2) In OpenArt paste (Cmd+V), generate, download best. 3) Drag image to panel. 4) When done with all 11, export ZIP.
+                </div>
+
+                <div class="iw-header-bar">
+                    <select id="iw-book-select" class="iw-book-select"></select>
+                    <div class="iw-progress">
+                        <div class="iw-progress-bar"><div id="iw-progress-fill" class="iw-progress-fill"></div></div>
+                        <div id="iw-progress-text" class="iw-progress-text">0/0 done</div>
+                    </div>
+                </div>
+
+                <div class="iw-actions-row">
+                    <button class="iw-btn iw-btn-ghost" onclick="iwOpenArt()">Open OpenArt</button>
+                    <button class="iw-btn iw-btn-primary" onclick="iwExportZip()">Export ZIP (final images)</button>
+                    <button class="iw-btn iw-btn-ghost" onclick="iwResetBook()">Reset current book</button>
+                </div>
+
+                <div id="iw-panels" class="iw-panels"></div>
+            </div>
+
+            <div id="iw-toast" class="iw-toast"></div>
+        </section>
+
         <!-- Batch Status -->
         <div id="batch-status" class="batch-status" style="display:none"></div>
 
@@ -625,6 +848,13 @@
     <script src="js/preview.js"></script>
     <script src="js/batch.js"></script>
     <script src="js/storage.js"></script>
+    <script src="js/image-workflow.js"></script>
+    <script src="js/book-wizard.js"></script>
+    <script src="js/book-compile.js"></script>
+    <script src="js/research-import.js"></script>
+    <script src="js/book-ideas.js"></script>
+    <script src="js/image-gen.js"></script>
+    <script src="js/decision-dashboard.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

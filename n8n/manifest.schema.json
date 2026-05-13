@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kdp-book-factory.local/schemas/manifest-1.0.json",
+  "title": "KDP Book Factory — Image Manifest",
+  "description": "Contrato entre la app y n8n. Describe qué imágenes generar para cada página del libro y bajo qué reglas. Cualquier libro futuro produce uno de estos.",
+  "type": "object",
+  "required": [
+    "bookId",
+    "version",
+    "trim",
+    "dpi",
+    "imageSize_px",
+    "stylePreset",
+    "compliance",
+    "pageCount",
+    "pages"
+  ],
+  "properties": {
+    "bookId": {
+      "type": "string",
+      "description": "Identificador único, slug-style. Ej: 'mega-puzzle-teens-vol1'."
+    },
+    "version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Versión del schema. Bump si cambia el contrato (rompe libros viejos)."
+    },
+    "title": {
+      "type": "string",
+      "description": "Título humano del libro (para logs y UI de n8n)."
+    },
+    "language": {
+      "type": "string",
+      "enum": ["en", "es", "bilingual"],
+      "default": "en"
+    },
+    "trim": {
+      "type": "object",
+      "description": "Tamaño final del libro impreso, en pulgadas (KDP).",
+      "required": ["width_in", "height_in", "bleed_in"],
+      "properties": {
+        "width_in":  { "type": "number", "description": "Ancho de página." },
+        "height_in": { "type": "number", "description": "Alto de página." },
+        "bleed_in":  { "type": "number", "default": 0.125, "description": "Sangrado KDP. 0.125\" estándar para imágenes que cortan al borde." }
+      }
+    },
+    "dpi": {
+      "type": "integer",
+      "const": 300,
+      "description": "KDP exige 300 DPI para imágenes de interior."
+    },
+    "imageSize_px": {
+      "type": "object",
+      "description": "Tamaño exacto en píxeles de las imágenes a generar. Calculado: (trim + bleed*2) × DPI.",
+      "required": ["width", "height"],
+      "properties": {
+        "width":  { "type": "integer", "minimum": 300 },
+        "height": { "type": "integer", "minimum": 300 }
+      }
+    },
+    "stylePreset": {
+      "type": "string",
+      "description": "Identificador del preset de estilo en n8n. La paleta y el motor lo expanden allá. Ej: 'aesthetic-pinterest', 'soft-neutral', 'punk-sketch', 'cottagecore-warm'."
+    },
+    "samplesPerPage": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4,
+      "default": 1,
+      "description": "Cuántas variantes generar por página. Tú escoges la mejor. 3 es el sweet spot calidad/costo."
+    },
+    "compliance": {
+      "type": "object",
+      "description": "Restricciones aplicadas a TODAS las imágenes del libro.",
+      "required": ["aiDisclosure", "kdpSafe", "noText", "noTrademarks"],
+      "properties": {
+        "aiDisclosure": { "type": "boolean", "description": "Marcar AI disclosure al subir a KDP. Siempre true cuando se usa AI." },
+        "kdpSafe":      { "type": "boolean", "description": "Imagen apta para KDP (sin contenido prohibido)." },
+        "noText":       { "type": "boolean", "description": "La imagen NO debe contener texto. La app pone el texto encima." },
+        "noTrademarks": { "type": "boolean", "description": "Prohibir marcas/logos/personajes con copyright." },
+        "noChildren":   { "type": "boolean", "default": false, "description": "Para libros adultos: no incluir figuras de niños." },
+        "noFaces":      { "type": "boolean", "default": false, "description": "Algunos libros prefieren no incluir caras humanas." }
+      }
+    },
+    "engineRouting": {
+      "type": "object",
+      "description": "Qué motor usar según el tipo de página. Permite mezclar calidad premium para lo importante (portadas/dividers) y motor barato para fondos suaves. Si se omite, n8n usa los defaults definidos abajo.",
+      "properties": {
+        "cover-front":       { "type": "string", "enum": ["flux-pro-ultra", "flux-schnell"], "default": "flux-pro-ultra" },
+        "cover-back":        { "type": "string", "enum": ["flux-pro-ultra", "flux-schnell"], "default": "flux-pro-ultra" },
+        "section-divider":   { "type": "string", "enum": ["flux-pro-ultra", "flux-schnell"], "default": "flux-pro-ultra" },
+        "interior-bg-full":  { "type": "string", "enum": ["flux-pro-ultra", "flux-schnell"], "default": "flux-pro-ultra" },
+        "interior-bg-soft":  { "type": "string", "enum": ["flux-pro-ultra", "flux-schnell"], "default": "flux-schnell" },
+        "decorative-corner": { "type": "string", "enum": ["flux-pro-ultra", "flux-schnell"], "default": "flux-schnell" }
+      }
+    },
+    "callback": {
+      "type": "object",
+      "description": "Cómo n8n notifica a la app al terminar.",
+      "properties": {
+        "webhookUrl": { "type": "string", "format": "uri" },
+        "outputDir":  { "type": "string", "description": "Carpeta donde guardar el PDF final compuesto." }
+      }
+    },
+    "pageCount": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Total de páginas del libro. n8n lo usa para verificar que el PDF base coincide."
+    },
+    "pages": {
+      "type": "array",
+      "description": "SOLO las páginas que necesitan imagen. Páginas no listadas se asumen 'interior-content' (sin fondo decorativo, contenido normal).",
+      "items": { "$ref": "#/$defs/page" }
+    }
+  },
+  "$defs": {
+    "page": {
+      "type": "object",
+      "required": ["n", "type"],
+      "properties": {
+        "n": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Número de página (1-indexed). Para covers usar 0 = front, -1 = back."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "cover-front",
+            "cover-back",
+            "interior-bg-soft",
+            "interior-bg-full",
+            "section-divider",
+            "decorative-corner"
+          ],
+          "description": "interior-bg-soft = fondo decorativo detrás del contenido. interior-bg-full = imagen ocupa toda la página. section-divider = divisor con título encima. decorative-corner = solo adorno en esquina."
+        },
+        "prompt": {
+          "type": "string",
+          "description": "Prompt positivo para el motor de imagen. Requerido para todos los types."
+        },
+        "negativePrompt": {
+          "type": "string",
+          "description": "Qué evitar. Opcional. n8n lo combina con el negative del stylePreset."
+        },
+        "stylePresetOverride": {
+          "type": "string",
+          "description": "Sobrescribe el stylePreset del libro solo para esta página."
+        },
+        "enginePresetOverride": {
+          "type": "string",
+          "enum": ["flux-pro-ultra", "flux-schnell"],
+          "description": "Sobrescribe el motor para ESTA página específica. Útil si una sola página necesita calidad premium (o al revés)."
+        },
+        "samples": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4,
+          "description": "Sobrescribe samplesPerPage para esta página. Útil si la portada necesita 4 opciones pero los fondos solo 1."
+        },
+        "seed": {
+          "type": "integer",
+          "description": "Seed para reproducibilidad. Opcional."
+        },
+        "out": {
+          "type": "string",
+          "description": "Nombre del archivo de salida. Auto-generado si se omite (ej: 'p012.png')."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Comentario humano. n8n lo ignora."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,198 @@
+{
+  "name": "KDP Book Factory — Image Generation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "book-images",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-1",
+      "name": "Webhook (receive manifest)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 400],
+      "webhookId": "kdp-book-images"
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Recibe el manifest y produce un item por cada página a generar\nconst manifest = $input.first().json.body || $input.first().json;\n\n// Validación mínima\nif (!manifest.bookId)        throw new Error('manifest.bookId requerido');\nif (!manifest.imageSize_px)  throw new Error('manifest.imageSize_px requerido');\nif (!manifest.pages)         throw new Error('manifest.pages requerido');\n\n// Routing por defecto si no viene en el manifest\nconst defaultRouting = {\n  'cover-front':       'flux-pro-ultra',\n  'cover-back':        'flux-pro-ultra',\n  'section-divider':   'flux-pro-ultra',\n  'interior-bg-full':  'flux-pro-ultra',\n  'interior-bg-soft':  'flux-schnell',\n  'decorative-corner': 'flux-schnell'\n};\nconst routing = { ...defaultRouting, ...(manifest.engineRouting || {}) };\nconst samplesDefault = manifest.samplesPerPage || 1;\n\n// Calcula aspect ratio para Flux Pro Ultra (que solo acepta presets)\nfunction aspectRatio(w, h) {\n  const r = w / h;\n  const candidates = [\n    ['21:9', 21/9], ['16:9', 16/9], ['4:3', 4/3], ['3:2', 3/2],\n    ['1:1', 1], ['2:3', 2/3], ['3:4', 3/4], ['9:16', 9/16], ['9:21', 9/21]\n  ];\n  return candidates.reduce((best, c) =>\n    Math.abs(c[1] - r) < Math.abs(best[1] - r) ? c : best\n  )[0];\n}\n\nconst { width, height } = manifest.imageSize_px;\nconst ar = aspectRatio(width, height);\n\n// Construye prompt con compliance suffix\nfunction buildPrompt(page, manifest) {\n  const c = manifest.compliance || {};\n  const tags = [];\n  if (c.noText)        tags.push('no text', 'no letters', 'no words');\n  if (c.noTrademarks)  tags.push('no logos', 'no brand names', 'no copyrighted characters');\n  if (c.noFaces)       tags.push('no faces', 'no people');\n  if (c.noChildren)    tags.push('no children');\n  const styleHint = page.stylePresetOverride || manifest.stylePreset || '';\n  return [page.prompt, styleHint, tags.join(', ')].filter(Boolean).join(', ');\n}\n\nconst items = manifest.pages.map(page => {\n  const engine = page.enginePresetOverride || routing[page.type] || 'flux-schnell';\n  const samples = Math.min(4, Math.max(1, page.samples || samplesDefault));\n  return {\n    json: {\n      bookId: manifest.bookId,\n      n: page.n,\n      type: page.type,\n      engine,\n      samples,\n      prompt: buildPrompt(page, manifest),\n      negativePrompt: page.negativePrompt || 'low quality, blurry, watermark, signature, jpeg artifacts',\n      width,\n      height,\n      aspectRatio: ar,\n      seed: page.seed || null,\n      out: page.out || `p${String(page.n).padStart(3, '0')}.png`,\n      callback: manifest.callback || null\n    }\n  };\n});\n\nreturn items;"
+      },
+      "id": "code-1",
+      "name": "Prepare Jobs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 400]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "typeValidation": "strict" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.engine }}",
+                    "rightValue": "flux-pro-ultra",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "outputKey": "flux-pro-ultra"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "typeValidation": "strict" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.engine }}",
+                    "rightValue": "flux-schnell",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "outputKey": "flux-schnell"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "switch-1",
+      "name": "Route by Engine",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [680, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://fal.run/fal-ai/flux-pro/v1.1-ultra",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"prompt\": $json.prompt,\n  \"aspect_ratio\": $json.aspectRatio,\n  \"num_images\": $json.samples,\n  \"enable_safety_checker\": true,\n  \"safety_tolerance\": \"2\",\n  \"output_format\": \"png\",\n  \"raw\": false,\n  \"seed\": $json.seed\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "http-flux-pro",
+      "name": "Flux Pro Ultra (fal.ai)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 280],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fal-api-key",
+          "name": "fal.ai API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://fal.run/fal-ai/flux/schnell",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"prompt\": $json.prompt,\n  \"image_size\": { \"width\": $json.width > 1440 ? 1440 : $json.width, \"height\": $json.height > 2160 ? 2160 : $json.height },\n  \"num_inference_steps\": 4,\n  \"num_images\": $json.samples,\n  \"enable_safety_checker\": true,\n  \"seed\": $json.seed\n}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "http-flux-schnell",
+      "name": "Flux Schnell (fal.ai)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 520],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fal-api-key",
+          "name": "fal.ai API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Combina la respuesta de fal.ai con los metadatos originales del job\nconst input = $input.first();\nconst job = $('Prepare Jobs').itemMatching($input.itemIndex).json;\nconst response = input.json;\n\nconst images = (response.images || []).map((img, i) => ({\n  variant: i + 1,\n  url: img.url,\n  width: img.width,\n  height: img.height,\n  contentType: img.content_type\n}));\n\nreturn [{\n  json: {\n    bookId: job.bookId,\n    n: job.n,\n    type: job.type,\n    engine: job.engine,\n    out: job.out,\n    samplesRequested: job.samples,\n    samplesReturned: images.length,\n    samples: images,\n    seed: response.seed || null,\n    success: images.length > 0,\n    error: images.length > 0 ? null : (response.error || 'no images returned')\n  }\n}];"
+      },
+      "id": "code-format",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "id": "aggregate-1",
+      "name": "Aggregate All Pages",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1340, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"bookId\": $json.data && $json.data[0] ? $json.data[0].bookId : null,\n  \"totalPages\": $json.data ? $json.data.length : 0,\n  \"successCount\": $json.data ? $json.data.filter(p => p.success).length : 0,\n  \"failureCount\": $json.data ? $json.data.filter(p => !p.success).length : 0,\n  \"images\": $json.data\n}",
+        "options": {}
+      },
+      "id": "respond-1",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1560, 400]
+    }
+  ],
+  "connections": {
+    "Webhook (receive manifest)": {
+      "main": [[{ "node": "Prepare Jobs", "type": "main", "index": 0 }]]
+    },
+    "Prepare Jobs": {
+      "main": [[{ "node": "Route by Engine", "type": "main", "index": 0 }]]
+    },
+    "Route by Engine": {
+      "main": [
+        [{ "node": "Flux Pro Ultra (fal.ai)", "type": "main", "index": 0 }],
+        [{ "node": "Flux Schnell (fal.ai)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Flux Pro Ultra (fal.ai)": {
+      "main": [[{ "node": "Format Response", "type": "main", "index": 0 }]]
+    },
+    "Flux Schnell (fal.ai)": {
+      "main": [[{ "node": "Format Response", "type": "main", "index": 0 }]]
+    },
+    "Format Response": {
+      "main": [[{ "node": "Aggregate All Pages", "type": "main", "index": 0 }]]
+    },
+    "Aggregate All Pages": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

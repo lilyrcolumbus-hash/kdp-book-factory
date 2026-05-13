@@ -8,6 +8,18 @@ document.querySelectorAll('.tab').forEach(tab => {
     });
 });
 
+// Tools toggle (show/hide legacy generator tabs)
+(function() {
+    const toggle = document.getElementById('tools-toggle');
+    if (!toggle) return;
+    // Restore state
+    if (localStorage.getItem('show_tools') === '1') document.body.classList.add('show-tools');
+    toggle.addEventListener('click', () => {
+        document.body.classList.toggle('show-tools');
+        localStorage.setItem('show_tools', document.body.classList.contains('show-tools') ? '1' : '0');
+    });
+})();
+
 // Coloring book image preview
 document.getElementById('cb-images').addEventListener('change', function(e) {
     const preview = document.getElementById('cb-preview');
@@ -86,6 +98,8 @@ const UI_STRINGS = {
             covers: 'Portadas',
             metadata: 'Metadatos',
             royalties: 'Royalties',
+            imagesai: 'Imagenes IA',
+            bookwizard: '📚 Crear Libro',
         },
     },
     en: {
@@ -103,6 +117,8 @@ const UI_STRINGS = {
             covers: 'Covers',
             metadata: 'Metadata',
             royalties: 'Royalties',
+            imagesai: 'AI Images',
+            bookwizard: '📚 Create Book',
         },
     },
 };

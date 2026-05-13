@@ -1,0 +1,111 @@
+{
+  "$schema": "./manifest.schema.json",
+  "bookId": "mega-brain-games-teens-vol1",
+  "version": "1.0",
+  "title": "Mega Brain Games for Teens: 300+ Puzzles to Outsmart Boredom (and Maybe Your Math Teacher) — Volume 1",
+  "language": "en",
+  "trim":         { "width_in": 6, "height_in": 9, "bleed_in": 0.125 },
+  "dpi":          300,
+  "imageSize_px": { "width": 1875, "height": 2775 },
+  "stylePreset":  "comic-wimpy-kid-color",
+  "samplesPerPage": 3,
+  "compliance": {
+    "aiDisclosure": true,
+    "kdpSafe":      true,
+    "noText":       true,
+    "noTrademarks": true,
+    "noFaces":      false
+  },
+  "engineRouting": {
+    "cover-front":       "flux-pro-ultra",
+    "cover-back":        "flux-pro-ultra",
+    "section-divider":   "flux-pro-ultra",
+    "interior-bg-full":  "flux-pro-ultra",
+    "interior-bg-soft":  "flux-pro-ultra",
+    "decorative-corner": "flux-pro-ultra"
+  },
+  "callback": {
+    "webhookUrl": "http://localhost:8080/n8n-callback",
+    "outputDir":  "./output/mega-brain-games-teens-vol1"
+  },
+  "pageCount": 200,
+  "pages": [
+    {
+      "n": 0,
+      "type": "cover-front",
+      "prompt": "Book cover for a fun teen puzzle book aged 11-15, comic book illustrative style. Vibrant solid bright YELLOW background (#FFD93D) covering the entire page. CENTER: large cartoon mascot character — a cute pink cartoon brain (#FF6B9D) with personality, wearing big black sunglasses, wide friendly grin, blue gaming headphones over the top, with cartoon arms holding a yellow pencil in one hand and giving a thumbs up with the other. Mascot drawn with THICK BOLD BLACK OUTLINES in classic comic book illustration style, like Wimpy Kid or Big Nate. Around the mascot: explosive burst of colorful doodles radiating outward — comic action lines, speech bubbles, small puzzle pieces in cyan blue (#4ECDC4) coral red (#FF6B6B) lime green (#95E1D3) and electric blue (#2B6CB0), scattered numbers (3, 7, 9, 5), lightning bolts, four-pointed stars, simple maze patterns, dice, padlocks. All elements drawn with thick black outlines and flat bright color fills. Composition: mascot in lower center, title space reserved at top 30% (mostly clean yellow with a few burst sparks). High energy, chaotic but balanced, multi-color saturated palette, comic book Wimpy Kid Big Nate vibe. KDP 6x9 paperback cover, full bleed. No text, no letters, no words.",
+      "out": "cover-front.png",
+      "notes": "Title 'MEGA BRAIN GAMES FOR TEENS' + tagline 'Outsmart Boredom' added in Canva over top 30%"
+    },
+    {
+      "n": -1,
+      "type": "cover-back",
+      "prompt": "Book back cover for a teen puzzle book, comic book style matching the front cover. Solid bright YELLOW background (#FFD93D) covering the entire page. EDGES only: comic book burst doodles in cyan blue (#4ECDC4), coral red (#FF6B6B), lime green (#95E1D3), and electric blue (#2B6CB0) — small puzzle pieces, lightning bolts, four-pointed stars, dice, padlocks, question marks, exclamation marks, speech bubbles, scattered numbers. Drawn with thick bold black outlines and flat color fills. Center-left two-thirds reserved as clean yellow area for description text. Lower-right corner reserved blank for ISBN barcode. Top-right corner: small cute pink brain mascot (#FF6B9D) with sunglasses and blue headphones giving a small wave, occupying about 12% of corner area. Comic book Wimpy Kid Big Nate vibe, high energy. KDP 6x9 paperback back cover, full bleed. No text, no letters, no words.",
+      "out": "cover-back.png",
+      "notes": "Description copy + ISBN barcode added later"
+    },
+    {
+      "n": 1,
+      "type": "interior-bg-soft",
+      "prompt": "Book interior welcome page for a teen puzzle book, Wimpy Kid / Big Nate cartoon style, COLOR. White background with subtle paper texture. Decorative cluster ONLY in top-right corner: cute pink brain mascot character (#FF6B9D) waving hello with a wide friendly grin, wearing sunglasses and blue headphones, occupying about 15% of corner area. Around the mascot small sparkle stars, empty speech bubble shapes, in cyan blue (#4ECDC4) and coral red (#FF6B6B). Bottom-left corner: small cluster of doodles — dice, lightbulb, lightning bolt, question marks, in mixed colors with thick black outlines. Center 70% of page kept clean white only for welcome text overlay. Thick bold black outlines, flat color fills, comic book illustration style. KDP 6x9 color interior, 300 DPI. No text, no letters, no words.",
+      "out": "p001-welcome.png",
+      "notes": "Welcome text ('Plot twist: your brain is the boss now.') added by app"
+    },
+    {
+      "n": 3,
+      "type": "section-divider",
+      "prompt": "Book interior page illustration for a teen puzzle book, Wimpy Kid / Big Nate cartoon style, COLOR. Centered illustration: cute pink brain mascot character (#FF6B9D) with personality, wearing big black sunglasses and blue gaming headphones, with a wide grin. Mascot is holding a large vintage magnifying glass in one hand pointing at the ground like a detective on a case, with a curving dotted trail line on the floor leading away. Around the mascot scattered: small puzzle piece outlines, sparkle stars, question marks, dotted trails, in cyan blue (#4ECDC4) and coral red (#FF6B6B). Thick bold black outlines, flat color fills, comic book illustration style, hand-drawn cartoon energy, high personality, like Diary of a Wimpy Kid book interior. White background with subtle paper texture. Top 25% kept clean white (for section title overlay). Bottom 12% clean white (for page number). KDP 6x9 color interior, 300 DPI. No text, no letters, no words.",
+      "out": "p003-divider-word-hunters.png",
+      "notes": "Section #1: WORD HUNTERS — 'Find the words. Trust no one.'"
+    },
+    {
+      "n": 34,
+      "type": "section-divider",
+      "prompt": "Book interior page illustration for a teen puzzle book, Wimpy Kid / Big Nate cartoon style, COLOR. Centered illustration: cute pink brain mascot character (#FF6B9D) with personality, wearing big black sunglasses and blue gaming headphones, with a wide grin. Mascot is wearing a black ninja headband across the top with two flowing ribbons, holding a calculator like a weapon, in a confident kung-fu stance. Around the mascot scattered: small numbers 1 through 9 floating randomly, mini grid squares, ninja star shapes, in cyan blue (#4ECDC4) and coral red (#FF6B6B), plus sparkle stars, question marks, dotted trails. Thick bold black outlines, flat color fills, comic book illustration style, hand-drawn cartoon energy, high personality, like Diary of a Wimpy Kid book interior. White background with subtle paper texture. Top 25% kept clean white (for section title overlay). Bottom 12% clean white (for page number). KDP 6x9 color interior, 300 DPI. No text, no letters, no words.",
+      "out": "p034-divider-number-ninjas.png",
+      "notes": "Section #2: NUMBER NINJAS (Sudoku) — 'It's just numbers. (Plot twist: it's a trap.)'"
+    },
+    {
+      "n": 65,
+      "type": "section-divider",
+      "prompt": "Book interior page illustration for a teen puzzle book, Wimpy Kid / Big Nate cartoon style, COLOR. Centered illustration: cute pink brain mascot character (#FF6B9D) with personality, wearing big black sunglasses and blue gaming headphones, with a wide grin. Mascot is wearing a graduation mortarboard cap with a flowing tassel, holding a giant yellow pencil like a sword raised in victory, with a confident heroic stance. Around the mascot scattered: math symbols (plus, minus, multiplication, division, equals, infinity, pi, square root, percentage) in cyan blue (#4ECDC4) and coral red (#FF6B6B), plus sparkle stars, question marks, lightning bolts. Thick bold black outlines, flat color fills, comic book illustration style, hand-drawn cartoon energy, high personality, like Diary of a Wimpy Kid book interior. White background with subtle paper texture. Top 25% kept clean white (for section title overlay). Bottom 12% clean white (for page number). KDP 6x9 color interior, 300 DPI. No text, no letters, no words.",
+      "out": "p065-divider-math-squad.png",
+      "notes": "Section #3: MATH SQUAD — 'Math that doesn't make you cry. We hope.'"
+    },
+    {
+      "n": 96,
+      "type": "section-divider",
+      "prompt": "Book interior page illustration for a teen puzzle book, Wimpy Kid / Big Nate cartoon style, COLOR. Centered illustration: cute pink brain mascot character (#FF6B9D) with personality, wearing big black sunglasses and blue gaming headphones, with a wide grin. Mascot is running fast with arms pumping forward, sneakers visible in mid-stride, motion lines streaking behind, looking energetic and determined. Around the mascot scattered: footprint icons, directional arrows pointing different ways, simple maze patterns, in cyan blue (#4ECDC4) and coral red (#FF6B6B), plus sparkle stars, question marks, dotted trails showing path. Thick bold black outlines, flat color fills, comic book illustration style, hand-drawn cartoon energy, high personality, like Diary of a Wimpy Kid book interior. White background with subtle paper texture. Top 25% kept clean white (for section title overlay). Bottom 12% clean white (for page number). KDP 6x9 color interior, 300 DPI. No text, no letters, no words.",
+      "out": "p096-divider-maze-runners.png",
+      "notes": "Section #4: MAZE RUNNERS — 'If you get lost, that's kind of the point.'"
+    },
+    {
+      "n": 127,
+      "type": "section-divider",
+      "prompt": "Book interior page illustration for a teen puzzle book, Wimpy Kid / Big Nate cartoon style, COLOR. Centered illustration: cute pink brain mascot character (#FF6B9D) with personality, wearing big black sunglasses and blue gaming headphones, with a wide grin. Mascot is wearing a tan detective trench coat and a brown fedora hat, holding a large vintage padlock with a small key in the keyhole, in a mysterious sneaky pose. Around the mascot scattered: cipher symbols (small triangles, dots, dashes, geometric runes, hash marks, simple icons), small padlocks, in cyan blue (#4ECDC4) and coral red (#FF6B6B), plus sparkle stars, question marks, dotted trails. Thick bold black outlines, flat color fills, comic book illustration style, hand-drawn cartoon energy, high personality, like Diary of a Wimpy Kid book interior. White background with subtle paper texture. Top 25% kept clean white (for section title overlay). Bottom 12% clean white (for page number). KDP 6x9 color interior, 300 DPI. No text, no letters, no words.",
+      "out": "p127-divider-code-breakers.png",
+      "notes": "Section #5: CODE BREAKERS (Cryptograms) — 'Decode messages. Become a spy. Annoy parents.'"
+    },
+    {
+      "n": 158,
+      "type": "section-divider",
+      "prompt": "Book interior page illustration for a teen puzzle book, Wimpy Kid / Big Nate cartoon style, COLOR. Centered illustration: cute pink brain mascot character (#FF6B9D) with personality, wearing big black sunglasses and blue gaming headphones, with a wide grin. Mascot is wearing a brown Sherlock-style deerstalker hat, holding a vintage magnifying glass examining colorful jigsaw puzzle pieces scattered on the floor below, in a curious investigation pose. Around the mascot scattered: colorful jigsaw puzzle pieces in various shapes, picture clue symbols (eye, book, dice, sun, lightbulb), in cyan blue (#4ECDC4) and coral red (#FF6B6B), plus sparkle stars, question marks, dotted trails. Thick bold black outlines, flat color fills, comic book illustration style, hand-drawn cartoon energy, high personality, like Diary of a Wimpy Kid book interior. White background with subtle paper texture. Top 25% kept clean white (for section title overlay). Bottom 12% clean white (for page number). KDP 6x9 color interior, 300 DPI. No text, no letters, no words.",
+      "out": "p158-divider-picture-detectives.png",
+      "notes": "Section #6: PICTURE DETECTIVES (Rebus) — 'Read pictures. Confuse adults.'"
+    },
+    {
+      "n": 180,
+      "type": "interior-bg-soft",
+      "prompt": "Book interior decorative quote page for a teen puzzle book, Wimpy Kid / Big Nate cartoon style, COLOR. White background with subtle paper texture covering 90% of page. Small decorative illustration in BOTTOM-RIGHT corner only: cute pink brain mascot character (#FF6B9D) with sunglasses and blue headphones, in a relaxed pose with thumbs up and a wide grin, occupying about 15% of bottom-right corner area. Around the mascot 2-3 small sparkle stars and a small empty speech bubble in cyan blue (#4ECDC4). Top-left small decorative cluster: 3-4 small four-pointed sparkle stars and a small lightning bolt in coral red (#FF6B6B). Center 75% of page kept clean white texture only (no elements, no decoration) for humorous quote text overlay. Thick bold black outlines, flat color fills, comic book illustration style. KDP 6x9 color interior, 300 DPI. No text, no letters, no words.",
+      "out": "p180-quote-page.png",
+      "notes": "Humor quote ('We promise these puzzles are harder than your excuses.') added by app"
+    },
+    {
+      "n": 199,
+      "type": "section-divider",
+      "prompt": "Book interior section divider for the solutions section of a teen puzzle book, Wimpy Kid / Big Nate cartoon style, COLOR. Centered illustration: cute pink brain mascot character (#FF6B9D) with sunglasses and blue headphones, holding a giant green checkmark in one hand and giving a thumbs up with the other, in a victory celebration pose with a wide proud grin. Around the mascot scattered: small green checkmarks, sparkle stars, gold star icons, thumbs up icons, in cyan blue (#4ECDC4) and coral red (#FF6B6B). Thick bold black outlines, flat color fills, comic book illustration style, hand-drawn cartoon energy, high personality, like Diary of a Wimpy Kid book interior. White background with subtle paper texture. Top 25% kept clean white (for section title overlay). Bottom 12% clean white (for page number). KDP 6x9 color interior, 300 DPI. No text, no letters, no words.",
+      "out": "p199-divider-solutions.png",
+      "notes": "Solutions section — 'Yes, we have answers. No, we won't judge you for checking.'"
+    }
+  ]
+}
