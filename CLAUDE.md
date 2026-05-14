@@ -14,6 +14,60 @@ Web-based PDF book generation tool for Amazon Kindle Direct Publishing (KDP). Va
 - `localStorage['bw_book_ideas']` — DEPRECATED, auto-cleared after migration to IDB
 - `localStorage['bw_legacy_cleaned_v1']` — one-time flag, removes orphan projects without a linking Book Idea
 
+## Sprint 8 changes — 2026-05-14
+
+### Deploy to Cloudflare Workers + Static Assets (DONE 2026-05-14)
+
+**Live URL:** https://kdp-book-factory.lilyrcolumbus.workers.dev
+
+Deployed via **Workers + Static Assets** (NOT classic Pages — Cloudflare's new "Create application" wizard routes static sites through Workers now). Same Cloudflare account as SiteSafe/SmartGrowth (`ae34fffdc22f7b4446e782a4188c9946`), but a **separate project**. No shared settings, env vars, or domain routing.
+
+**Why Workers instead of Pages:** the user clicked "Create application" → Cloudflare's UI defaulted to the Workers flow with `npx wrangler deploy` as the deploy command. Functionally equivalent for static sites; the only diff is the URL pattern (`*.workers.dev` vs `*.pages.dev`).
+
+**Config files added at repo root:**
+- `wrangler.jsonc` — `assets.directory = "./"`, `not_found_handling = "single-page-application"` so any unknown route falls back to `index.html` (which loads the tab UI client-side).
+- `.assetsignore` — excludes `.git/`, `node_modules/`, `*.md`, `*.mjs`, `*.pdf`, `n8n/`, `research/`, `package*.json`, `wrangler.jsonc` from the asset upload. Without this the first deploy uploaded 4918 files including the full git history (verified `/.git/HEAD` returned 200 — fixed by re-deploying with the ignore list).
+
+**Auto-deploy** triggered on every push to `main` (same workflow as her other two CF projects).
+
+### PWA setup — installable as iPhone app (DONE 2026-05-14)
+
+User asked for the platform to work like an installed app on her iPhone. PWA approach lets her "Add to Home Screen" from Safari and launch the site fullscreen with its own icon, no browser chrome.
+
+**Files added:**
+- `manifest.json` — `name: KDP Book Factory`, `short_name: KDP Books`, `display: standalone`, `theme_color: #C8602F`, `background_color: #FBF6EC`, points at `icon.svg` for both `any` and `maskable` purpose
+- `icon.svg` — two-book composition (cream + ochre) on terracotta rounded-square background, scales for any size since SVG. iOS 14+ accepts SVG for `apple-touch-icon`.
+- `icon-maskable.svg` — simpler centered variant for Android's maskable area (10% safe padding all around).
+
+**Meta tags added to `index.html`:**
+- `viewport=width=device-width,initial-scale=1,viewport-fit=cover` (replaces older static viewport)
+- `theme-color`, `apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style`, `apple-mobile-web-app-title="KDP Books"`, `mobile-web-app-capable`
+- `link rel="manifest"`, `link rel="apple-touch-icon"`, `link rel="icon"`
+
+### Mobile CSS hardening (DONE 2026-05-14)
+
+Existing `@media (max-width: 768px)` block had base coverage but missed iPhone-specific ergonomics. Added to `theme-warm.css`:
+
+- **Tab nav scrolls horizontally** instead of wrapping to multiple lines on narrow widths (`overflow-x: auto`, `flex-wrap: nowrap`, hidden scrollbar). Same for `#bw-stages-nav`.
+- **Mascot grid collapses to 1 column** under 768px (was 2 cols by default).
+- **40px min tap targets** on buttons / mascot cards / style cards / palette cards — iOS Human Interface Guidelines minimum.
+- **`-webkit-tap-highlight-color: transparent`** to kill the gray flash on tap.
+- **`env(safe-area-inset-*)`** respected in standalone mode so content doesn't get hidden behind the notch / home indicator.
+- **Long prompts and code blocks** get `word-break: break-word` so they don't trigger horizontal page scroll on narrow widths.
+
+### How the user installs the app on iPhone (workflow for future reference)
+
+1. Open `https://kdp-book-factory.lilyrcolumbus.workers.dev` in Safari (NOT Chrome — iOS only installs PWAs from Safari)
+2. Tap the Share button (square with arrow up) at the bottom of Safari
+3. Scroll down → **"Add to Home Screen"**
+4. Confirm name (defaults to "KDP Books" thanks to `apple-mobile-web-app-title`)
+5. Tap **Add** → icon appears on home screen with the terracotta "two-book" art
+6. Launching from the home-screen icon opens the platform fullscreen with no Safari UI
+
+**Caveat — localStorage is per-device.** A book started on Mac stays on Mac; iPhone has its own separate localStorage. Cross-device sync requires Sprint 9 (Supabase migration, still pending). For now the iPhone version is a separate workspace.
+
+---
+
 ## Sprint 7 changes — 2026-05-13
 
 Live test session with the user generating the cover in OpenArt with the Vol 1 variety-puzzle:for-teens preset. Three drops focused on **honest model recommendations** + **end-to-end platform connectivity** so future books with different mascots/niches don't blindly inherit Vol 1's hardcoded assumptions.
