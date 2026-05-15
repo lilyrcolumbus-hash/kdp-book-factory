@@ -1,5 +1,71 @@
 # KDP Book Factory
 
+## 🔥 Current state — 2026-05-15 (start here on resume)
+
+**Deployed + working backend, browser test pending.**
+
+### Live URLs
+- **Production app:** https://kdp-book-factory.lilyrcolumbus.workers.dev (Cloudflare Workers + Static Assets, auto-deploy from `main`)
+- **Local dev:** http://localhost:8765/ (`python3 -m http.server 8765` from repo root)
+- **Supabase project:** `dqburpynxfhkqdtqdxer` (URL: `https://dqburpynxfhkqdtqdxer.supabase.co`) — separate from SiteSafe (`mvzolbabbkedmlhqhiwi`) and SmartGrowth (`xgprfrckkziglufsxyfm`)
+- **GitHub repo:** https://github.com/lilyrcolumbus-hash/kdp-book-factory (last push: Sprint 9 `bda85cf`)
+- **Cloudflare dashboard:** https://dash.cloudflare.com/ae34fffdc22f7b4446e782a4188c9946/workers/services/view/kdp-book-factory
+
+### What's working (backend-verified via curl simulation)
+- ✅ Cloudflare deploy: cloud-storage.js + cloud-config.js + supabase-js CDN all loading
+- ✅ Supabase anon auth: signin returns valid JWT
+- ✅ Workspace CRUD: create/read/membership/delete all 201/204
+- ✅ Projects CRUD via REST + RLS
+- ✅ Storage bucket `assets`: PNG upload 200, public download 200
+- ✅ RLS policies via `public.user_workspaces()` SECURITY DEFINER function (after 0002 fix)
+- ✅ PWA installable on iPhone (manifest + icons + iOS meta tags)
+- ✅ Mobile responsive CSS (40px tap targets, horizontal-scroll tabs, safe-area insets)
+
+### What needs BROWSER test (only user can do this — claude has no browser access)
+- ⏳ Open `localhost:8765` on Mac → DevTools Console should log `[cloud] Ready. Workspace: <UUID>`
+- ⏳ Verify Vol 1 (Mega Brain Games) migrated to cloud — check Supabase Table Editor → `projects` table → should see 1 row
+- ⏳ Click `📱 Pair device` button in wizard header → shows 8-char invite_code
+- ⏳ Open `https://kdp-book-factory.lilyrcolumbus.workers.dev` in iPhone Safari → see empty wizard
+- ⏳ iPhone: tap `📱 Pair device` → paste Mac's invite_code → tap Join → reload → see Vol 1
+- ⏳ Live sync test: change mascot on Mac (Stage 2) → iPhone re-renders within ~1 sec
+- ⏳ Image upload sync: upload cover-front on Mac → iPhone shows thumb after ~3-10 sec
+- ⏳ Install as iPhone app: Safari Share → "Add to Home Screen" → confirm "KDP Books" → orange icon on home screen → tap opens fullscreen
+
+### How to resume after browser test
+**If test passed:** mark Hito E (task #10) complete in the task list. Sprint 9 is shipped. Next priority is finishing Vol 1 (still bottlenecked on cover images — see Mega Brain Games section). Suggest the user buy a domain + start distribution per the SiteSafe-side memory.
+
+**If test failed:** ask user for the Console error message. Most likely causes:
+1. iPhone cached old `index.html` (no `<script src="cloud-storage.js">`) → hard refresh / clear Safari cache
+2. `cs:ready` never logs → check `[cloud] Boot failed` warning right above → auth issue or schema not applied
+3. Realtime not propagating → check Supabase Dashboard → Database → Replication → confirm `projects`, `book_ideas`, `workspace_settings` are in the `supabase_realtime` publication (the migration adds them)
+
+### Files added/changed in this multi-sprint session (2026-05-13 → 05-15)
+- `js/cloud-config.js`, `js/cloud-storage.js` — sync layer (NEW)
+- `supabase/migrations/0001_initial_schema.sql`, `0002_fix_rls_recursion.sql` — schema (NEW)
+- `manifest.json`, `icon.svg`, `icon-maskable.svg` — PWA (NEW)
+- `wrangler.jsonc`, `.assetsignore` — Cloudflare Workers deploy config (NEW)
+- `js/book-wizard.js` — `bwShowPairDialog()` + cs.* hooks in write functions
+- `js/book-ideas.js` — cs.* hooks in write functions
+- `js/book-compile.js` — `bcEnsureAssetsLoaded()` + cloud upload in bcSaveAsset
+- `js/image-workflow.js` — Sprint 7 model resolver (Flux Dev for mascots / American comic sketch for character covers, depending on project state)
+- `index.html` — script tags for cloud sync, PWA meta tags, mobile viewport
+- `css/theme-warm.css` — mobile responsive hardening, pair-device modal, openart-config card
+
+### Open issues / known limitations
+- **Concurrent edits**: last write wins (no conflict resolution). OK for single user.
+- **Offline writes don't auto-queue**: if user edits while offline, localStorage saves but cloud upsert is no-op. To force re-sync, clear `cs_migration_v1_done` flag in localStorage.
+- **First-time iPhone opens NEW empty workspace**: must pair with Mac's invite_code to see books. Otherwise iPhone and Mac stay isolated.
+- **IW_BOOKS catalog only has variety-puzzle:for-teens prompts**: a coloring/journal book would still see puzzle-style panels (Word Hunters / Number Ninjas / etc.). Mascot substitution works, but scenes are puzzle-themed. Refactor pending.
+- **bcGetAsset is sync**: if dataUrl not in memory yet (just paired device), thumb is blank until `cs:asset-loaded` fires. UX-acceptable but not perfect.
+
+### Active book status (unchanged from Sprint 6)
+- Vol 1 "Mega Puzzles for Teens" (variety-puzzle:for-teens with pink brain mascot)
+- Interior PDF compiled: 148 pages, 6 sections
+- Cover wrap PDF compiled (spine 0.333", 148 pgs cream)
+- 🔴 **Front cover EN BLANCO** — bloqueado en imágenes. fal.ai locked balance ($10 min top-up needed) OR OpenArt manual (Infinite plan). Next session must resolve covers before KDP upload.
+
+---
+
 ## Project Overview
 Web-based PDF book generation tool for Amazon Kindle Direct Publishing (KDP). Vanilla JS / jsPDF, no build step. **Production-ready end-to-end pipeline as of 2026-05-09: Stage 0 research dashboard (with optional MEGA mode for 1 Sonnet run instead of 4) → 6-stage wizard → fal.ai cover + interior automation → automated PDF compile → KDP-ready output. Cost per fully-automated book ≈ $1.10.**
 
@@ -7,12 +73,16 @@ Web-based PDF book generation tool for Amazon Kindle Direct Publishing (KDP). Va
 
 **Idioma de la UI:** **English** (US KDP market). Comunicación con el dueño/usuario en español, código y producto en inglés (memoria personal).
 
-**Storage:**
-- **IndexedDB** `kdp-book-factory` / store `book_ideas` / key `all` — book ideas (research drafts). Replaced localStorage 2026-05-07 to eliminate quota issues. Auto-migrated from legacy localStorage on first boot.
-- `localStorage['bw_projects']` — `{active, list[]}` of book projects (wizard data + asset images)
-- `localStorage['falai_api_key']` — fal.ai API key (used for both Phase A cover gen + Phase B interior gen)
-- `localStorage['bw_book_ideas']` — DEPRECATED, auto-cleared after migration to IDB
-- `localStorage['bw_legacy_cleaned_v1']` — one-time flag, removes orphan projects without a linking Book Idea
+**Storage (post-Sprint 9 — cloud + local):**
+- **Supabase Postgres** `dqburpynxfhkqdtqdxer` — canonical store for projects + book_ideas + workspace_settings (JSONB)
+- **Supabase Storage** bucket `assets` — canonical store for cover/divider/ornament images (PNG/JPEG)
+- **In-memory cache** `window.cs.cache` — synchronous read layer (Map of projects/ideas/settings)
+- **localStorage** `bw_projects`, `cs_offline_*` — offline backup + warm-start cache, kept in sync by `cs.persistOffline()`
+- **localStorage** `cs_auth_session_v1` — Supabase anonymous auth session (auto-managed by supabase-js)
+- **localStorage** `cs_workspace_id_v1` — id of the workspace this device is paired with
+- **localStorage** `cs_migration_v1_done` — one-time flag, set after legacy localStorage → cloud migration runs
+- **IndexedDB** `kdp-book-factory` / `book_ideas` — DEPRECATED post-Sprint 9 (book ideas now in cloud)
+- **localStorage** `falai_api_key` — still device-local (API keys are per-device by design)
 
 ## Sprint 9 changes — 2026-05-15
 
