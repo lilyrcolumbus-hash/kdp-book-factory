@@ -131,7 +131,14 @@ async function bcProcessUploadedImage(file, trimId) {
   });
 }
 
-// Save asset to project. Returns true on success, false on quota error (caller should remove the asset from project).
+// Save asset to project. With cloud sync available, uploads the binary to
+// Supabase Storage and stores `{ url, dataUrl (in-memory), width, height, ...}`
+// in the project — only the URL is persisted to the cloud DB (cs.upsertProject
+// strips dataUrl before sending). Without cloud (offline), falls back to the
+// pure-base64 path which lives in localStorage as before.
+//
+// Returns true on success. Returns false on localStorage quota error (caller
+// should display a warning and the in-memory state is rolled back).
 function bcSaveAsset(project, slotId, processed) {
   if (!project.assets) project.assets = {};
   const previousAsset = project.assets[slotId];  // for rollback
@@ -144,17 +151,35 @@ function bcSaveAsset(project, slotId, processed) {
   };
   const ok = bwUpsert(project);
   if (!ok) {
-    // Rollback the in-memory change so subsequent reads don't see a "saved" image
     if (previousAsset) project.assets[slotId] = previousAsset;
     else delete project.assets[slotId];
+    return false;
   }
-  return ok;
+  // Fire-and-forget cloud upload. dataUrl stays in memory for compile/UI.
+  if (window.cs && window.cs.isReady()) {
+    window.cs.uploadAsset(project.id, slotId, processed.dataUrl, 'image/jpeg')
+      .then((url) => {
+        // Patch the asset with the canonical URL so other devices can fetch it.
+        if (project.assets[slotId]) {
+          project.assets[slotId].url = url;
+          bwUpsert(project); // re-sync now that we have the URL
+        }
+      })
+      .catch((err) => {
+        console.warn(`[cloud] Asset upload failed for ${slotId}:`, err.message);
+        // dataUrl is still saved locally — compile still works on this device.
+      });
+  }
+  return true;
 }
 
 function bcRemoveAsset(project, slotId) {
-  if (project.assets) {
-    delete project.assets[slotId];
-    bwUpsert(project);
+  if (!project.assets) return;
+  const wasCloud = !!project.assets[slotId]?.url;
+  delete project.assets[slotId];
+  bwUpsert(project);
+  if (wasCloud && window.cs) {
+    window.cs.deleteAsset(project.id, slotId).catch(() => { /* best-effort */ });
   }
 }
 
@@ -798,6 +823,30 @@ async function bcCompileMissionArc(doc, project, sections, tw, th, onProgress) {
 
 // ====================== MAIN COMPILE ORCHESTRATOR ======================
 
+// Ensure all asset dataUrls in the project are loaded into memory before
+// compile starts. On the device that uploaded the images, dataUrls are already
+// cached. On a paired device that just hydrated from cloud, assets have only
+// `url` — this fetches each URL → dataUrl so jsPDF can embed them.
+async function bcEnsureAssetsLoaded(project, onProgress) {
+  if (!project?.assets || !window.cs) return;
+  const slots = Object.keys(project.assets);
+  const missing = slots.filter(id => {
+    const a = project.assets[id];
+    return a && a.url && !a.dataUrl;
+  });
+  if (missing.length === 0) return;
+  if (onProgress) onProgress(2, `Fetching ${missing.length} image(s) from cloud...`);
+  for (let i = 0; i < missing.length; i++) {
+    const slotId = missing[i];
+    const a = project.assets[slotId];
+    try {
+      a.dataUrl = await window.cs.fetchAssetAsDataUrl(a.url);
+    } catch (e) {
+      console.warn(`[compile] Could not fetch ${slotId}:`, e.message);
+    }
+  }
+}
+
 async function bwCompileBook(project, opts = {}) {
   if (!window.jspdf) throw new Error('jsPDF no cargado');
   const { jsPDF } = window.jspdf;
@@ -805,6 +854,10 @@ async function bwCompileBook(project, opts = {}) {
   const [tw, th] = bcGetTrimPts(trimId);
   const doc = new jsPDF({ unit: 'pt', format: [tw, th], compress: true });
   const onProgress = opts.onProgress || (() => {});
+
+  // If this device just hydrated from cloud, asset images may not be in memory
+  // yet. Pull them down before we start drawing pages.
+  await bcEnsureAssetsLoaded(project, onProgress);
 
   // ── FRONT MATTER
   onProgress(5, 'Title page...');
@@ -893,6 +946,8 @@ function bcCalcSpineWidth(project) {
 }
 
 async function bwCompileCoverWrap(project, opts = {}) {
+  // Pull down any cloud-only asset images before drawing the cover wrap.
+  await bcEnsureAssetsLoaded(project, opts.onProgress);
   if (!window.jspdf) throw new Error('jsPDF no cargado');
   const { jsPDF } = window.jspdf;
   const trimId = project.technical?.trimSize || '6x9';

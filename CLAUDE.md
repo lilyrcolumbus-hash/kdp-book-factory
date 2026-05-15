@@ -14,6 +14,124 @@ Web-based PDF book generation tool for Amazon Kindle Direct Publishing (KDP). Va
 - `localStorage['bw_book_ideas']` — DEPRECATED, auto-cleared after migration to IDB
 - `localStorage['bw_legacy_cleaned_v1']` — one-time flag, removes orphan projects without a linking Book Idea
 
+## Sprint 9 changes — 2026-05-15
+
+Cross-device sync via Supabase. User asked for "todo incluido imágenes" — projects, book ideas, AND asset images all sync between Mac and iPhone. Live (~1 second propagation through Supabase Realtime).
+
+### Supabase project: `dqburpynxfhkqdtqdxer`
+
+- URL: `https://dqburpynxfhkqdtqdxer.supabase.co`
+- Org: `lilyrcolumbus-hash's Org` (separate from SiteSafe + SmartGrowth orgs)
+- Anon key: committed in `js/cloud-config.js` (public JWT, RLS guards access)
+- Anonymous Auth ON (each device = anon user, joined to a workspace by invite_code)
+- Schema: `supabase/migrations/0001_initial_schema.sql` + `0002_fix_rls_recursion.sql`
+
+### Schema overview
+
+| Table | Purpose |
+|---|---|
+| `workspaces` | shared container, has 8-char `invite_code` for pairing |
+| `workspace_members` | many-to-many: user_id ↔ workspace_id |
+| `projects` | book projects (JSONB `data` column, id matches client-side `bw-<ts>`) |
+| `book_ideas` | Stage 0 research drafts (JSONB) |
+| `workspace_settings` | active_project_id, active_idea_id (per workspace) |
+| Storage bucket `assets` | cover/divider/ornament images, public read |
+
+RLS critical fix (Sprint 9 v2): the initial `workspace_members` SELECT policy referenced the same table in a subquery → Postgres infinite-recursion (error 42P17). `0002_fix_rls_recursion.sql` introduces `public.user_workspaces()` as a `SECURITY DEFINER STABLE` function that bypasses RLS to fetch the caller's workspaces, then rewrites all dependent policies to use it.
+
+### Architecture: sync without breaking the existing sync API
+
+The wizard reads project state synchronously (`bwLoadAll()`, `bcGetAsset()`). Changing those to async would cascade through hundreds of call sites. Solution:
+
+1. **In-memory cache (`cs.cache`)** — Map of projects + ideas + settings. Reads stay synchronous.
+2. **Writes go to three places**: cache (immediate) → localStorage in legacy `bw_projects` format (backward-compat, also acts as offline backup) → async upsert to Supabase via fire-and-forget Promise.
+3. **Boot sequence** (in `js/cloud-storage.js`):
+   - Warm-start cache from localStorage offline copy → wizard renders something immediately
+   - Anonymous sign-in (session persisted via Supabase JS storage adapter)
+   - Ensure workspace exists (look up by saved id → look up by membership → create new with random `invite_code`)
+   - One-time migration: walk legacy `bw_projects` localStorage → upsert each to cloud (gated by `cs_migration_v1_done` flag)
+   - Hydrate cache from cloud (full pull of projects + ideas + settings)
+   - `persistOffline()` writes legacy `bw_projects` format so the wizard's reads work transparently
+   - Set up Realtime subscriptions
+   - Fire `cs:ready` → wizard re-renders
+   - Background: `hydrateAssetDataUrls()` walks cached projects, fetches each `asset.url` → blob → dataURL, populates `asset.dataUrl` in-memory. Fires `cs:asset-loaded` per slot so the Assets Manager re-renders thumbs.
+4. **Realtime**: subscriptions on `projects`, `book_ideas`, `workspace_settings`. Incoming change updates cache + fires `cs:projects-updated` / `cs:ideas-updated` / `cs:settings-updated` events. `index.html` listeners call `bwRender()` + `dd0Render()`. On project updates, `hydrateAssetDataUrls()` re-runs so new asset URLs get pulled into memory automatically.
+
+### Asset storage: split between cloud and memory
+
+Projects can have 8-15 images at 200-800 KB each (covers, dividers, ornaments). Storing them as base64 in the `data` JSONB column would push 10+ MB per project to Postgres on every save. Instead:
+
+- **Canonical store**: Supabase Storage bucket `assets`, object path `<workspace_id>/<project_id>/<slot>.png`
+- **In-memory**: `project.assets[slotId] = { url, dataUrl, width, height, sizeKB, uploadedAt }` — `dataUrl` is the cached binary, used directly by jsPDF on compile and by Assets Manager thumb rendering
+- **Persisted to cloud**: `cs.upsertProject` calls `stripForCloud(project)` which deep-clones the project and deletes every `asset.dataUrl` field before upserting. The cloud row contains only the URL + dimensions.
+- **Fetch back**: `hydrateAssetDataUrls()` runs after boot AND after every realtime project update — finds assets with `url` but no `dataUrl`, fetches from URL → blob → dataURL, caches in memory.
+
+`bcSaveAsset` now uploads the image to Storage via `cs.uploadAsset(projectId, slotId, dataUrl, mime)` and patches `asset.url` after the upload completes. The dataUrl stays in memory for instant compile + thumb rendering on the same device.
+
+`bcEnsureAssetsLoaded(project, onProgress)` is called at the top of `bwCompileBook` and `bwCompileCoverWrap` — it waits for any cloud-only assets to download before drawing pages. This handles the "user just paired iPhone, clicks Compile before hydration finished" case.
+
+### Pairing UI — invite_code share/join
+
+Header has a new **`📱 Pair device`** button (`bwShowPairDialog`) that opens a modal with:
+- The current workspace's 8-char `invite_code` (unambiguous alphabet — no I/1/O/0 confusion), displayed in monospace 28pt with a Copy button
+- An input to join an existing workspace by code. On submit: `cs.joinWorkspace(code)` looks up the workspace, upserts `workspace_members`, switches the cache to the new workspace, reloads.
+
+⚠ **Joining a different workspace replaces local state with that workspace's books.** Warning displayed in the modal. The old workspace still exists in the cloud (the user is still a member from the previous link), but the local cache loses its data until they switch back.
+
+### Wired-up writes (4 + 3 hooks)
+
+In `book-wizard.js`:
+- `bwSetActiveId` → `cs.setActiveProject(id)`
+- `bwUpsert(project)` → `cs.upsertProject(project)`
+- `bwDelete(id)` → `cs.deleteProject(id)` + `cs.setActiveProject(newActive)`
+
+In `book-ideas.js`:
+- `biSetActiveId` → `cs.setActiveIdea(id)`
+- `biUpsert(idea)` → `cs.upsertIdea(idea)`
+- `biDelete(id)` → `cs.deleteIdea(id)` + `cs.setActiveIdea(newActive)`
+
+In `book-compile.js`:
+- `bcSaveAsset` → `cs.uploadAsset(projectId, slotId, dataUrl)` + patches `asset.url`
+- `bcRemoveAsset` → `cs.deleteAsset(projectId, slotId)`
+
+Read functions (`bwLoadAll`, `bwGetActive`, `bcGetAsset`, etc.) untouched — they read from `bw_projects` localStorage which `persistOffline()` keeps in sync with the cloud cache.
+
+### Files added/changed
+
+- `js/cloud-config.js` — Supabase URL + anon key (safe to commit, RLS guards access)
+- `js/cloud-storage.js` — full sync layer, ~360 lines, exposes `window.cs`
+- `supabase/migrations/0001_initial_schema.sql` — tables, indexes, RLS, Storage bucket, Realtime publication
+- `supabase/migrations/0002_fix_rls_recursion.sql` — SECURITY DEFINER function + corrected policies
+- `index.html` — adds supabase-js CDN, cloud-config, cloud-storage scripts BEFORE wizard scripts; listeners for `cs:*` events that trigger `bwRender()` / `dd0Render()`
+- `js/book-wizard.js` — `bwShowPairDialog()` + hooks into write functions
+- `js/book-ideas.js` — hooks into write functions
+- `js/book-compile.js` — `bcEnsureAssetsLoaded()` + cloud upload in `bcSaveAsset`
+- `css/theme-warm.css` — `.bw-modal*` + `.bw-pair-*` styles for the pairing dialog
+
+### Known limitations
+
+- **Concurrent edit conflict**: last write wins. If Mac and iPhone edit the same project at the same second, the later one overwrites the earlier silently. Acceptable for single-user (one person editing on one device at a time).
+- **Offline writes don't queue cleanly**: if user edits while offline, localStorage saves but `cs.upsertProject` is a no-op (workspace not yet loaded). When coming back online, the localStorage version is NOT auto-pushed — user would need a manual "force sync" button. Mitigation: localStorage migration runs once (`cs_migration_v1_done` flag); to re-trigger, clear that flag. Real fix would be an outbox queue. Not implemented.
+- **First-time iPhone open creates a NEW empty workspace** (not connected to Mac's workspace). User must click `📱 Pair device` on iPhone → paste Mac's invite_code to connect.
+- **Asset hydration cost**: opening on a paired device for the first time triggers N parallel image downloads (one per asset). For Vol 1's 19 images at ~500 KB each → ~10 MB download. Not blocking — UI renders progressively as each completes via `cs:asset-loaded`.
+
+### How to test cross-device sync
+
+1. Mac: open `http://localhost:8765/` → DevTools Console → wait for `[cloud] Ready. Workspace: <UUID>`
+2. Mac: click `📱 Pair device` → copy the 8-char invite code
+3. iPhone: open `https://kdp-book-factory.lilyrcolumbus.workers.dev/` in Safari
+4. iPhone: should see empty wizard (its own new workspace) → tap `📱 Pair device` → paste Mac's code → tap Join → page reloads with Mac's Vol 1 visible
+5. Test live: change mascot on Mac (Stage 2) → within ~1 second iPhone re-renders with new mascot
+6. Test upload sync: upload cover-front image on Mac → iPhone shows the thumb after ~3-10 seconds (depends on image size)
+
+### Bugs to look for during testing
+
+- Hard refresh may be needed on iPhone first time (Safari can cache old `index.html` without the new scripts)
+- If `cs:ready` never fires, check Console for auth/RLS errors
+- If realtime doesn't fire, verify in Supabase Dashboard → Database → Replication that `projects`, `book_ideas`, `workspace_settings` are in the `supabase_realtime` publication
+
+---
+
 ## Sprint 8 changes — 2026-05-14
 
 ### Deploy to Cloudflare Workers + Static Assets (DONE 2026-05-14)

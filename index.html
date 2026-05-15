@@ -885,6 +885,14 @@
         if (typeof bwRender === 'function') bwRender();
         if (typeof dd0Render === 'function') dd0Render();
       });
+      window.addEventListener('cs:asset-loaded', () => {
+        // An asset image finished downloading from Storage — re-render the
+        // Assets Manager so thumbs appear.
+        if (typeof bwRender === 'function') bwRender();
+      });
+      window.addEventListener('cs:offline', (e) => {
+        console.warn('[cloud] Offline mode:', e.detail.error);
+      });
     </script>
     <script src="js/book-ideas.js"></script>
     <script src="js/image-gen.js"></script>

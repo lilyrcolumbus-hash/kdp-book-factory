@@ -1297,6 +1297,7 @@ function bwRenderHeader() {
       ${seriesBadge}
       <button class="bw-btn bw-btn-ghost" id="bw-new-book">+ New book</button>
       <button class="bw-btn bw-btn-primary" id="bw-duplicate-vol" title="Creates Vol ${nextVol} reusing style, palette, mascot, layout and pricing. You only change the content.">📖 Duplicate as Vol ${nextVol}</button>
+      <button class="bw-btn bw-btn-ghost" id="bw-pair-device" title="Share this workspace with your phone or tablet">📱 Pair device</button>
       <button class="bw-btn bw-btn-ghost" id="bw-export-project">⬇️ Export JSON</button>
       <button class="bw-btn bw-btn-ghost" id="bw-delete-project">🗑️ Delete</button>
     </div>
@@ -1304,8 +1305,62 @@ function bwRenderHeader() {
   document.getElementById('bw-project-select').addEventListener('change', e => { bwSetActiveId(e.target.value); bwCurrentProject = bwGetActive(); bwRender(); });
   document.getElementById('bw-new-book').addEventListener('click', () => bwPromptNewBook());
   document.getElementById('bw-duplicate-vol').addEventListener('click', () => bwDuplicateVolHandler());
+  document.getElementById('bw-pair-device').addEventListener('click', () => bwShowPairDialog());
   document.getElementById('bw-export-project').addEventListener('click', () => bwExportJson());
   document.getElementById('bw-delete-project').addEventListener('click', () => { if (confirm('Delete book?')) { bwDelete(bwCurrentProject.id); bwCurrentProject = bwGetActive(); bwRender(); } });
+}
+
+// Pairing dialog — shows the workspace's invite_code so the user can enter it
+// on another device (phone, second laptop) to share the same books + images.
+// The other device pastes the code into the same dialog and clicks Join.
+function bwShowPairDialog() {
+  const code = window.cs?.getInviteCode() || '(loading…)';
+  const ready = window.cs?.isReady();
+  if (!ready) {
+    bwToast('Cloud sync is still loading — try again in a second.');
+    return;
+  }
+  const overlay = document.createElement('div');
+  overlay.className = 'bw-modal-overlay';
+  overlay.innerHTML = `
+    <div class="bw-modal bw-pair-modal">
+      <h3>📱 Pair another device</h3>
+      <p class="bw-pair-section-title">Share this workspace</p>
+      <p class="bw-pair-help">On your other device, open this same site and paste the code below.</p>
+      <div class="bw-pair-code">${code}</div>
+      <button class="bw-btn bw-btn-primary" id="bw-pair-copy">📋 Copy code</button>
+      <hr class="bw-pair-hr"/>
+      <p class="bw-pair-section-title">Or join an existing workspace</p>
+      <p class="bw-pair-help">If you already paired this device on another browser, paste the code here:</p>
+      <div class="bw-pair-join-row">
+        <input type="text" id="bw-pair-input" placeholder="XXXXXXXX" maxlength="8" autocapitalize="characters"/>
+        <button class="bw-btn bw-btn-primary" id="bw-pair-join">Join</button>
+      </div>
+      <p class="bw-pair-warn">⚠ Joining a different workspace replaces your current books with that workspace's books.</p>
+      <button class="bw-btn bw-btn-ghost" id="bw-pair-close">Close</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#bw-pair-close').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  overlay.querySelector('#bw-pair-copy').addEventListener('click', () => {
+    navigator.clipboard.writeText(code).then(() => bwToast('Code copied ✅'));
+  });
+  overlay.querySelector('#bw-pair-join').addEventListener('click', async () => {
+    const v = overlay.querySelector('#bw-pair-input').value.trim().toUpperCase();
+    if (!v || v.length !== 8) {
+      bwToast('Code must be 8 characters');
+      return;
+    }
+    try {
+      await window.cs.joinWorkspace(v);
+      overlay.remove();
+      bwToast('✓ Joined workspace. Reloading…');
+      setTimeout(() => location.reload(), 800);
+    } catch (e) {
+      bwToast('Error: ' + e.message);
+    }
+  });
 }
 
 function bwDuplicateVolHandler() {

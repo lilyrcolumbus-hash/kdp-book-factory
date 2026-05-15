@@ -236,6 +236,21 @@
   }
 
   // ====== CRUD wrappers (sync cache + async cloud) ======
+  // Strip the in-memory-only fields (asset dataUrls — the canonical store is the
+  // 'assets' bucket; dataUrls are cached locally for fast compile/render).
+  // Without this, every project upsert would push 5-20MB of base64 to Postgres.
+  function stripForCloud(project) {
+    if (!project?.assets) return project;
+    const clone = JSON.parse(JSON.stringify(project));
+    for (const slotId of Object.keys(clone.assets || {})) {
+      const a = clone.assets[slotId];
+      if (a && a.dataUrl) {
+        delete a.dataUrl; // keep .url, .width, .height, .sizeKB, .uploadedAt
+      }
+    }
+    return clone;
+  }
+
   function upsertProject(project) {
     if (!project?.id) return;
     cache.projects.set(project.id, project);
@@ -244,10 +259,33 @@
     sb.from('projects').upsert({
       id: project.id,
       workspace_id: workspace.id,
-      data: project,
+      data: stripForCloud(project),
     }, { onConflict: 'id' }).then(({ error }) => {
       if (error) console.warn('[cloud] upsertProject failed', error.message);
     });
+  }
+
+  // After cache hydrates from cloud, projects have asset.url but no .dataUrl.
+  // Fetch each asset's URL → dataUrl, cache it in memory, fire event so UI
+  // re-renders. Runs in background; doesn't block ready.
+  async function hydrateAssetDataUrls() {
+    for (const project of cache.projects.values()) {
+      if (!project.assets) continue;
+      const slotIds = Object.keys(project.assets);
+      for (const slotId of slotIds) {
+        const a = project.assets[slotId];
+        if (a && a.url && !a.dataUrl) {
+          try {
+            a.dataUrl = await fetchAssetAsDataUrl(a.url);
+            window.dispatchEvent(new CustomEvent('cs:asset-loaded', {
+              detail: { projectId: project.id, slotId }
+            }));
+          } catch (e) {
+            console.warn(`[cloud] Failed to fetch asset ${slotId}:`, e.message);
+          }
+        }
+      }
+    }
   }
 
   function deleteProject(id) {
@@ -361,6 +399,9 @@
             cache.projects.delete(payload.old.id);
           } else {
             cache.projects.set(payload.new.id, payload.new.data);
+            // The remote update may have included new asset URLs that this
+            // device doesn't have dataUrls for yet. Lazy-fetch in background.
+            hydrateAssetDataUrls();
           }
           persistOffline();
           window.dispatchEvent(new CustomEvent('cs:projects-updated'));
@@ -404,6 +445,9 @@
       ready = true;
       readyResolve();
       window.dispatchEvent(new CustomEvent('cs:ready', { detail: { workspace } }));
+      // Lazy-fetch asset dataUrls in the background so the UI can render thumbs
+      // and the compiler can build PDFs without re-downloading every time.
+      hydrateAssetDataUrls();
     } catch (e) {
       console.error('[cloud] Boot failed — operating in OFFLINE mode', e);
       // Stay with the offline cache. Wizard still works locally, sync resumes

@@ -502,6 +502,84 @@ label { color: var(--text-primary) !important; font-size: 13px !important; font-
   box-shadow: var(--shadow-lg) !important;
 }
 
+/* ========== Pair-device modal ========== */
+.bw-modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(0,0,0,.45) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 10000 !important;
+  padding: 16px !important;
+}
+.bw-modal {
+  background: var(--bg-surface, #FBF6EC) !important;
+  color: var(--text-primary) !important;
+  border-radius: 14px !important;
+  padding: 24px !important;
+  max-width: 480px !important;
+  width: 100% !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,.3) !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+}
+.bw-pair-modal h3 {
+  margin: 0 0 14px 0 !important;
+  color: var(--accent-primary-dark, #8B3F1A) !important;
+}
+.bw-pair-section-title {
+  font-weight: 700 !important;
+  margin: 16px 0 4px 0 !important;
+  font-size: 14px !important;
+}
+.bw-pair-help {
+  font-size: 13px !important;
+  color: var(--text-secondary) !important;
+  margin: 0 0 12px 0 !important;
+  line-height: 1.5 !important;
+}
+.bw-pair-code {
+  font-family: ui-monospace, Menlo, monospace !important;
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  letter-spacing: 4px !important;
+  text-align: center !important;
+  background: var(--accent-primary-soft, #FBEFE2) !important;
+  border: 2px dashed var(--accent-primary, #C8602F) !important;
+  border-radius: 10px !important;
+  padding: 18px !important;
+  margin: 6px 0 12px 0 !important;
+  color: var(--accent-primary-dark, #8B3F1A) !important;
+  user-select: all !important;
+}
+.bw-pair-hr {
+  border: none !important;
+  border-top: 1px solid var(--border-light) !important;
+  margin: 22px 0 !important;
+}
+.bw-pair-join-row {
+  display: flex !important;
+  gap: 8px !important;
+  margin: 8px 0 !important;
+}
+.bw-pair-join-row input {
+  flex: 1 !important;
+  padding: 12px !important;
+  font-family: ui-monospace, Menlo, monospace !important;
+  font-size: 18px !important;
+  letter-spacing: 3px !important;
+  text-transform: uppercase !important;
+  border: 1px solid var(--border-default) !important;
+  border-radius: 6px !important;
+  text-align: center !important;
+}
+.bw-pair-warn {
+  font-size: 11px !important;
+  color: var(--warning, #C9851B) !important;
+  margin: 12px 0 16px 0 !important;
+}
+
 /* ========== Mobile responsive (iPhone) ========== */
 @media (max-width: 768px) {
   .app { padding: 16px !important; }
