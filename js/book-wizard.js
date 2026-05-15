@@ -705,19 +705,29 @@ function bwGetActive() {
   const all = bwLoadAll();
   return all.list.find(p => p.id === all.active) || null;
 }
-function bwSetActiveId(id) { const all = bwLoadAll(); all.active = id; bwSaveAll(all); }
+function bwSetActiveId(id) {
+  const all = bwLoadAll(); all.active = id; bwSaveAll(all);
+  // Sync to cloud so the other device sees the same active project.
+  if (window.cs) window.cs.setActiveProject(id);
+}
 function bwUpsert(project) {
   const all = bwLoadAll();
   project.updatedAt = new Date().toISOString();
   const idx = all.list.findIndex(p => p.id === project.id);
   if (idx >= 0) all.list[idx] = project; else all.list.push(project);
-  return bwSaveAll(all);
+  const ok = bwSaveAll(all);
+  if (window.cs) window.cs.upsertProject(project);
+  return ok;
 }
 function bwDelete(id) {
   const all = bwLoadAll();
   all.list = all.list.filter(p => p.id !== id);
   if (all.active === id) all.active = all.list[0]?.id || null;
   bwSaveAll(all);
+  if (window.cs) {
+    window.cs.deleteProject(id);
+    if (all.active !== id) window.cs.setActiveProject(all.active);
+  }
 }
 
 // ====================== SERIES MANAGEMENT ======================

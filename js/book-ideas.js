@@ -213,6 +213,7 @@ function biSetActiveId(id) {
   const all = biLoadAll();
   all.active = id;
   biSaveAll(all);
+  if (window.cs) window.cs.setActiveIdea(id);
 }
 
 // Use a counter+timestamp+random suffix to guarantee uniqueness even on rapid
@@ -248,7 +249,9 @@ function biUpsert(idea) {
   idea.updatedAt = new Date().toISOString();
   const idx = all.list.findIndex(i => i.id === idea.id);
   if (idx >= 0) all.list[idx] = idea; else all.list.push(idea);
-  return biSaveAll(all);
+  const ok = biSaveAll(all);
+  if (window.cs) window.cs.upsertIdea(idea);
+  return ok;
 }
 
 function biDelete(id) {
@@ -256,6 +259,10 @@ function biDelete(id) {
   all.list = all.list.filter(i => i.id !== id);
   if (all.active === id) all.active = all.list[0]?.id || null;
   biSaveAll(all);
+  if (window.cs) {
+    window.cs.deleteIdea(id);
+    window.cs.setActiveIdea(all.active);
+  }
 }
 
 function biRename(id, label) {

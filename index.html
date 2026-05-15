@@ -843,6 +843,11 @@
         </div>
     </div>
 
+    <!-- Cloud sync (Supabase) — must load before wizard so window.cs is available -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/cloud-config.js"></script>
+    <script src="js/cloud-storage.js"></script>
+
     <script src="js/word-search.js"></script>
     <script src="js/sudoku.js"></script>
     <script src="js/journal.js"></script>
@@ -861,6 +866,26 @@
     <script src="js/book-wizard.js"></script>
     <script src="js/book-compile.js"></script>
     <script src="js/research-import.js"></script>
+
+    <!-- Re-render wizard / image-workflow when cloud sync updates from another device -->
+    <script>
+      window.addEventListener('cs:projects-updated', () => {
+        if (typeof bwRender === 'function') bwRender();
+      });
+      window.addEventListener('cs:ideas-updated', () => {
+        if (typeof dd0Render === 'function') dd0Render();
+        if (typeof bwRender === 'function') bwRender();
+      });
+      window.addEventListener('cs:settings-updated', () => {
+        if (typeof bwRender === 'function') bwRender();
+        if (typeof dd0Render === 'function') dd0Render();
+      });
+      window.addEventListener('cs:ready', (e) => {
+        console.log('[cloud] Ready. Workspace:', e.detail.workspace?.id);
+        if (typeof bwRender === 'function') bwRender();
+        if (typeof dd0Render === 'function') dd0Render();
+      });
+    </script>
     <script src="js/book-ideas.js"></script>
     <script src="js/image-gen.js"></script>
     <script src="js/decision-dashboard.js"></script>
